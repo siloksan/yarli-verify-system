@@ -1,0 +1,92 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum ScanResult {
+  OK
+  WRONG
+}
+
+model ProductionOrder {
+  id            String            @id @default(uuid())
+  externalId    String?           @unique
+  orderNumber   String            @unique
+  description   String?
+  plannedAt     DateTime?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  components    RecipeComponent[]
+  scanEvents    ScanEvent[]
+
+  @@index([orderNumber])
+}
+
+model RecipeComponent {
+  id              String           @id @default(uuid())
+  orderId         String
+  componentCode   String
+  componentName   String
+  requiredQty     Decimal          @default(0)
+  unit            String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  order           ProductionOrder  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  batches         ComponentBatch[]
+  scanEvents      ScanEvent[]
+
+  @@index([orderId])
+  @@index([componentCode])
+  @@unique([orderId, componentCode])
+}
+
+model ComponentBatch {
+  id             String          @id @default(uuid())
+  componentId    String
+  qrCode         String          @unique
+  batchNumber    String?
+  lotNumber      String?
+  expiresAt      DateTime?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  component      RecipeComponent @relation(fields: [componentId], references: [id], onDelete: Cascade)
+  scanEvents     ScanEvent[]
+
+  @@index([componentId])
+}
+
+model ScanEvent {
+  id             String           @id @default(uuid())
+  orderId        String
+  componentId    String
+  batchId        String?
+  scannedQr      String
+  result         ScanResult
+  scannedAt      DateTime         @default(now())
+  deviceId       String?
+  operatorId     String?
+  notes          String?
+
+  order          ProductionOrder  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  component      RecipeComponent  @relation(fields: [componentId], references: [id], onDelete: Cascade)
+  batch          ComponentBatch?  @relation(fields: [batchId], references: [id], onDelete: SetNull)
+
+  @@index([orderId])
+  @@index([componentId])
+  @@index([batchId])
+  @@index([scannedAt])
+}
+
