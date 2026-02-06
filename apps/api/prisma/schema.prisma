@@ -22,6 +22,7 @@ model ProductionOrder {
   id            String            @id @default(uuid())
   externalId    String?           @unique
   orderNumber   String            @unique
+  label         String
   description   String?
   plannedAt     DateTime?
   createdAt     DateTime          @default(now())
@@ -89,4 +90,3 @@ model ScanEvent {
   @@index([batchId])
   @@index([scannedAt])
 }
-

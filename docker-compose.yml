@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: yarli-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: yarli
+      POSTGRES_PASSWORD: yarli
+      POSTGRES_DB: yarli_verify
+    ports:
+      - "5432:5432"
+    volumes:
+      - yarli_pgdata:/var/lib/postgresql/data
+
+volumes:
+  yarli_pgdata:
