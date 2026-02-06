@@ -4,7 +4,7 @@ import 'dotenv/config';
 export const ENV_CONFIG_DEVELOPMENT = {
   app: {
     nodeEnv: process.env.NODE_ENV as Config['app']['nodeEnv'],
-    port: parseInt(process.env.PORT || '3000', 10),
+    port: parseInt(process.env.APP_PORT || '3000', 10),
   },
 
   db: {
