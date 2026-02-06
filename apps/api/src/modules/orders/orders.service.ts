@@ -1,21 +1,63 @@
-import { Injectable } from '@nestjs/common';
-import { CreateOrderDto } from './dto/create-order.dto';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '../../../generated/prisma/client';
+import { PrismaService } from '../../common/prisma/prisma.service';
 
 @Injectable()
 export class OrdersService {
-  create(createOrderDto: CreateOrderDto) {
-    return 'This action adds a new order';
+  constructor(private readonly prisma: PrismaService) {}
+
+  findAll(search?: string) {
+    const where: Prisma.ProductionOrderWhereInput | undefined = search
+      ? {
+          OR: [
+            {
+              label: {
+                contains: search,
+                mode: Prisma.QueryMode.insensitive,
+              },
+            },
+            {
+              orderNumber: {
+                contains: search,
+                mode: Prisma.QueryMode.insensitive,
+              },
+            },
+          ],
+        }
+      : undefined;
+
+    return this.prisma.productionOrder.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        orderNumber: true,
+        label: true,
+        description: true,
+        plannedAt: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
   }
 
-  findAll() {
-    return `This action returns all orders`;
-  }
+  async findRecipe(orderId: string) {
+    const order = await this.prisma.productionOrder.findUnique({
+      where: { id: orderId },
+      include: {
+        components: {
+          include: {
+            batches: true,
+          },
+          orderBy: { componentName: 'asc' },
+        },
+      },
+    });
 
-  findOne(id: number) {
-    return `This action returns a #${id} order`;
-  }
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
 
-  remove(id: number) {
-    return `This action removes a #${id} order`;
+    return order;
   }
 }
