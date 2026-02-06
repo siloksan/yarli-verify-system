@@ -18,6 +18,18 @@ enum ScanResult {
   WRONG
 }
 
+model Component {
+  id             String           @id @default(uuid())
+  code           String           @unique
+  name           String
+  description    String?
+  batches        ComponentBatch[]
+
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+}
+
+
 model ProductionOrder {
   id            String            @id @default(uuid())
   externalId    String?           @unique
@@ -43,9 +55,9 @@ model RecipeComponent {
   unit            String?
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
+  validBatches    String[]
 
-  order           ProductionOrder  @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  batches         ComponentBatch[]
+  order           ProductionOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
   scanEvents      ScanEvent[]
 
   @@index([orderId])
@@ -56,14 +68,14 @@ model RecipeComponent {
 model ComponentBatch {
   id             String          @id @default(uuid())
   componentId    String
-  qrCode         String          @unique
-  batchNumber    String?
+  qrCodeData     String?         @unique
+  batchNumber    String
   lotNumber      String?
   expiresAt      DateTime?
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
 
-  component      RecipeComponent @relation(fields: [componentId], references: [id], onDelete: Cascade)
+  component      Component  @relation(fields: [componentId], references: [id])
   scanEvents     ScanEvent[]
 
   @@index([componentId])

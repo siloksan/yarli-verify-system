@@ -7,7 +7,6 @@ import { PrismaModule } from './common/prisma/prisma.module';
 import { AppService } from './app.service';
 import { AppController } from './app.controller';
 import { OrdersModule } from './modules/orders/orders.module';
-import { RecipesModule } from './src/modules/recipes/recipes.module';
 
 @Module({
   imports: [
@@ -36,7 +35,6 @@ import { RecipesModule } from './src/modules/recipes/recipes.module';
     }),
     PrismaModule,
     OrdersModule,
-    RecipesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

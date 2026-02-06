@@ -1,12 +1,20 @@
 import { Prisma } from '../generated/prisma/client';
-import {
-  ComponentBatchCreateInput,
-  RecipeComponentCreateInput,
-} from 'generated/prisma/models';
+export interface SeedComponent {
+  componentCode: string;
+  componentName: string;
+  requiredQty: Prisma.Decimal;
+  unit?: string;
+}
+
+export interface SeedBatch {
+  batchNumber: string;
+  expiresAt?: Date;
+  qrCode?: string;
+}
 
 export interface ComponentWithBatches {
-  component: Omit<RecipeComponentCreateInput, 'id' | 'order'>;
-  batches: Omit<ComponentBatchCreateInput, 'component'>[];
+  component: SeedComponent;
+  batches: SeedBatch[];
 }
 
 export const COMMON_COMPONENTS: ComponentWithBatches[] = [
@@ -19,15 +27,11 @@ export const COMMON_COMPONENTS: ComponentWithBatches[] = [
     },
     batches: [
       {
-        qrCode: 'QR-TIO2-BATCH-2024-01',
-        batchNumber: 'BATCH-TIO2-2024-01',
-        lotNumber: 'LOT-TIO2-001-24',
+        batchNumber: 'П2500001',
         expiresAt: new Date('2025-12-31'),
       },
       {
-        qrCode: 'QR-TIO2-BATCH-2024-02',
-        batchNumber: 'BATCH-TIO2-2024-02',
-        lotNumber: 'LOT-TIO2-002-24',
+        batchNumber: 'П2500002',
         expiresAt: new Date('2025-12-31'),
       },
     ],
@@ -41,9 +45,7 @@ export const COMMON_COMPONENTS: ComponentWithBatches[] = [
     },
     batches: [
       {
-        qrCode: 'QR-FILLER-BATCH-2024-01',
-        batchNumber: 'BATCH-FILLER-2024-01',
-        lotNumber: 'LOT-FILLER-001-24',
+        batchNumber: 'П2500003',
         expiresAt: new Date('2025-06-30'),
       },
     ],
@@ -57,9 +59,7 @@ export const COMMON_COMPONENTS: ComponentWithBatches[] = [
     },
     batches: [
       {
-        qrCode: 'QR-DISPERSION-BATCH-2024-01',
-        batchNumber: 'BATCH-DISPERSION-2024-01',
-        lotNumber: 'LOT-DISPERSION-001-24',
+        batchNumber: 'П2500004',
         expiresAt: new Date('2024-12-31'),
       },
     ],
@@ -73,9 +73,7 @@ export const COMMON_COMPONENTS: ComponentWithBatches[] = [
     },
     batches: [
       {
-        qrCode: 'QR-DILUENT-BATCH-2024-01',
-        batchNumber: 'BATCH-DILUENT-2024-01',
-        lotNumber: 'LOT-DILUENT-001-24',
+        batchNumber: 'П2500005',
         expiresAt: new Date('2025-03-31'),
       },
     ],
@@ -89,9 +87,7 @@ export const COMMON_COMPONENTS: ComponentWithBatches[] = [
     },
     batches: [
       {
-        qrCode: 'QR-COALESCENT-BATCH-2024-01',
-        batchNumber: 'BATCH-COALESCENT-2024-01',
-        lotNumber: 'LOT-COALESCENT-001-24',
+        batchNumber: 'П2500006',
         expiresAt: new Date('2024-10-31'),
       },
     ],
@@ -105,9 +101,7 @@ export const COMMON_COMPONENTS: ComponentWithBatches[] = [
     },
     batches: [
       {
-        qrCode: 'QR-DEFOAMER-BATCH-2024-01',
-        batchNumber: 'BATCH-DEFOAMER-2024-01',
-        lotNumber: 'LOT-DEFOAMER-001-24',
+        batchNumber: 'П2500007',
         expiresAt: new Date('2024-09-30'),
       },
     ],
@@ -121,9 +115,7 @@ export const COMMON_COMPONENTS: ComponentWithBatches[] = [
     },
     batches: [
       {
-        qrCode: 'QR-DISPERSANT-BATCH-2024-01',
-        batchNumber: 'BATCH-DISPERSANT-2024-01',
-        lotNumber: 'LOT-DISPERSANT-001-24',
+        batchNumber: 'П2500008',
         expiresAt: new Date('2024-11-30'),
       },
     ],
@@ -137,9 +129,7 @@ export const COMMON_COMPONENTS: ComponentWithBatches[] = [
     },
     batches: [
       {
-        qrCode: 'QR-THICKENER-BATCH-2024-01',
-        batchNumber: 'BATCH-THICKENER-2024-01',
-        lotNumber: 'LOT-THICKENER-001-24',
+        batchNumber: 'П2500009',
         expiresAt: new Date('2024-08-31'),
       },
     ],
@@ -156,9 +146,7 @@ export const COLOR_COMPONENTS: Record<string, ComponentWithBatches> = {
     },
     batches: [
       {
-        qrCode: 'QR-WHITE-PIGMENT-BATCH-2024-01',
-        batchNumber: 'BATCH-WHITE-PIGMENT-2024-01',
-        lotNumber: 'LOT-WHITE-PIGMENT-001-24',
+        batchNumber: 'П2500010',
         expiresAt: new Date('2026-01-31'),
       },
     ],
@@ -172,15 +160,11 @@ export const COLOR_COMPONENTS: Record<string, ComponentWithBatches> = {
     },
     batches: [
       {
-        qrCode: 'QR-RED-PIGMENT-BATCH-2024-01',
-        batchNumber: 'BATCH-RED-PIGMENT-2024-01',
-        lotNumber: 'LOT-RED-PIGMENT-001-24',
+        batchNumber: 'П2500011',
         expiresAt: new Date('2025-08-31'),
       },
       {
-        qrCode: 'QR-RED-PIGMENT-BATCH-2024-02',
-        batchNumber: 'BATCH-RED-PIGMENT-2024-02',
-        lotNumber: 'LOT-RED-PIGMENT-002-24',
+        batchNumber: 'П2500012',
         expiresAt: new Date('2025-08-31'),
       },
     ],
@@ -194,9 +178,7 @@ export const COLOR_COMPONENTS: Record<string, ComponentWithBatches> = {
     },
     batches: [
       {
-        qrCode: 'QR-BLUE-PIGMENT-BATCH-2024-01',
-        batchNumber: 'BATCH-BLUE-PIGMENT-2024-01',
-        lotNumber: 'LOT-BLUE-PIGMENT-001-24',
+        batchNumber: 'П2500013',
         expiresAt: new Date('2025-07-31'),
       },
     ],
@@ -210,15 +192,11 @@ export const COLOR_COMPONENTS: Record<string, ComponentWithBatches> = {
     },
     batches: [
       {
-        qrCode: 'QR-BLACK-PIGMENT-BATCH-2024-01',
-        batchNumber: 'BATCH-BLACK-PIGMENT-2024-01',
-        lotNumber: 'LOT-BLACK-PIGMENT-001-24',
+        batchNumber: 'П2500014',
         expiresAt: new Date('2025-09-30'),
       },
       {
-        qrCode: 'QR-BLACK-PIGMENT-BATCH-2023-12',
-        batchNumber: 'BATCH-BLACK-PIGMENT-2023-12',
-        lotNumber: 'LOT-BLACK-PIGMENT-012-23',
+        batchNumber: 'П2500015',
         expiresAt: new Date('2024-12-31'),
       },
     ],

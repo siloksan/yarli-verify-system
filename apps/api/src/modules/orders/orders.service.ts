@@ -46,9 +46,6 @@ export class OrdersService {
       where: { id: orderId },
       include: {
         components: {
-          include: {
-            batches: true,
-          },
           orderBy: { componentName: 'asc' },
         },
       },
