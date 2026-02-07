@@ -1,12 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '../../../generated/prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { OrderResponseDto } from './dto/order.dto';
+import { plainToInstance } from 'class-transformer';
 
 @Injectable()
 export class OrdersService {
   constructor(private readonly prisma: PrismaService) {}
 
-  findAll(search?: string) {
+  async findAll(search?: string) {
     const where: Prisma.ProductionOrderWhereInput | undefined = search
       ? {
           OR: [
@@ -26,19 +28,18 @@ export class OrdersService {
         }
       : undefined;
 
-    return this.prisma.productionOrder.findMany({
+    const result =  await this.prisma.productionOrder.findMany({
       where,
       orderBy: { createdAt: 'desc' },
       select: {
         id: true,
         orderNumber: true,
         label: true,
-        description: true,
-        plannedAt: true,
-        createdAt: true,
-        updatedAt: true,
+        updatedAt: true
       },
     });
+
+    return plainToInstance(OrderResponseDto, result, { excludeExtraneousValues: true })
   }
 
   async findRecipe(orderId: string) {

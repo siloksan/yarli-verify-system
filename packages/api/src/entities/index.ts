@@ -4,3 +4,4 @@ export class Batch {
   componentId: string;
   componentName: string;
 }
+
