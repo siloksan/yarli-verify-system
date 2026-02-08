@@ -1,8 +1,14 @@
 import { Link, useParams } from 'react-router';
+import { useOrder } from '~/features/orders/hooks/orders.hook';
 
 export default function OrderDetailsPage() {
   const { orderId } = useParams();
 
+  if (!orderId) return null;
+  
+  const { data: components, isLoading, isError, error } = useOrder(orderId);
+  console.log('components', components)
+  
   return (
     <div className="min-h-screen bg-gray-50 p-4 safe-padding">
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">

@@ -4,6 +4,7 @@ import { ConfigService } from './common/config/config.service';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { Logger } from 'nestjs-pino';
+import cors from 'cors'
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -37,7 +38,27 @@ async function bootstrap() {
       `Swagger documentation available at http://localhost:${port}/${swaggerConfig.path}`,
     );
   }
-  app.enableCors();
+
+  // for develop purpose only, remove on prod
+  app.enableCors({
+    // origin: ['https://improved-waddle-wprwxqxjgqw295qv-5173.app.github.dev'],
+    origin: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH'],
+    credentials: true
+  });
+
+// OR more secure - allow only your frontend
+app.use(cors({
+    origin: [
+    'https://*.app.github.dev',
+    'https://*.github.dev',
+    'http://localhost:5173',
+    'http://localhost:3000'
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
   // Explicitly specifying all interfaces
   await app.listen(port, '0.0.0.0');

@@ -26,6 +26,7 @@
     "@repo/api": "workspace:*",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.3",
+    "cors": "^2.8.6",
     "dotenv": "^17.2.3",
     "escape-html": "^1.0.3",
     "nestjs-pino": "^4.5.0",

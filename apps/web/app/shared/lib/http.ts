@@ -1,4 +1,4 @@
-const BASE_API_URL = 'http://localhost:3000'
+const BASE_API_URL = 'https://improved-waddle-wprwxqxjgqw295qv-3000.app.github.dev'
 
 export const HTTP_METHODS = {
     GET: 'GET',
@@ -9,7 +9,7 @@ export const HTTP_METHODS = {
 
 type RequestOptions<TBody> = {
     method?: keyof typeof HTTP_METHODS
-    body: TBody
+    body?: TBody
     params?: Record<string, string | number | boolean | undefined>
     headers?: HeadersInit
 }
@@ -19,7 +19,7 @@ export async function http<TResponse, TBody = unknown>(
     options?: RequestOptions<TBody>
 ): Promise<TResponse> {
     const { method = HTTP_METHODS.GET, body, params, headers } = options ?? {};
-
+    console.log('http request')
     let finalUrl = `${BASE_API_URL}${endpoint ? endpoint : ''}`;
     if (params) {
         const queryString = Object.entries(params)
