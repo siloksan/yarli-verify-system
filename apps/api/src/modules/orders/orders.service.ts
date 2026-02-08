@@ -3,7 +3,7 @@ import { Prisma } from '../../../generated/prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { OrderResponseDto } from './dto/order.dto';
 import { plainToInstance } from 'class-transformer';
-import { OrderComponentResponseDto } from './dto/order-component.dto';
+import { OrderWithComponentsResponseDto } from './dto/order-component.dto';
 
 @Injectable()
 export class OrdersService {
@@ -57,6 +57,6 @@ export class OrdersService {
       throw new NotFoundException('Order not found');
     }
     console.log(order)
-    return plainToInstance(OrderComponentResponseDto, order, { excludeExtraneousValues: true });
+    return plainToInstance(OrderWithComponentsResponseDto, order, { excludeExtraneousValues: true, enableImplicitConversion: true });
   }
 }
