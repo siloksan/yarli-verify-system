@@ -29,18 +29,20 @@ export class OrdersService {
         }
       : undefined;
 
-    const result =  await this.prisma.productionOrder.findMany({
+    const result = await this.prisma.productionOrder.findMany({
       where,
       orderBy: { createdAt: 'desc' },
       select: {
         id: true,
         orderNumber: true,
         label: true,
-        updatedAt: true
+        updatedAt: true,
       },
     });
 
-    return plainToInstance(OrderResponseDto, result, { excludeExtraneousValues: true })
+    return plainToInstance(OrderResponseDto, result, {
+      excludeExtraneousValues: true,
+    });
   }
 
   async findRecipe(orderId: string) {
@@ -49,6 +51,11 @@ export class OrdersService {
       include: {
         components: {
           orderBy: { componentName: 'asc' },
+          include: {
+            scanEvents: {
+              orderBy: { scannedAt: 'desc' },
+            },
+          },
         },
       },
     });
@@ -56,7 +63,10 @@ export class OrdersService {
     if (!order) {
       throw new NotFoundException('Order not found');
     }
-    console.log(order)
-    return plainToInstance(OrderWithComponentsResponseDto, order, { excludeExtraneousValues: true, enableImplicitConversion: true });
+
+    return plainToInstance(OrderWithComponentsResponseDto, order, {
+      excludeExtraneousValues: true,
+      enableImplicitConversion: true,
+    });
   }
 }

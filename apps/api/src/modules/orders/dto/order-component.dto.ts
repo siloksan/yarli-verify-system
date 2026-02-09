@@ -1,44 +1,82 @@
-import { ApiProperty } from "@nestjs/swagger";
-import { IOrderComponentDto } from "@repo/api";
-import { Expose, Type } from "class-transformer";
-import { IsString } from "class-validator";
-import { OrderResponseDto } from "./order.dto";
+import { ApiProperty } from '@nestjs/swagger';
+import { IOrderComponentDto, type IScanEvent, ScanResult } from '@repo/api';
+import { Expose, Type } from 'class-transformer';
+import { IsArray, IsEnum, IsString } from 'class-validator';
+import { OrderResponseDto } from './order.dto';
 
-export class OrderComponentResponseDto implements IOrderComponentDto {
-    @ApiProperty()
-    @IsString()
-    @Expose()
-    id: string;
+class ScanEvent implements IScanEvent {
+  @ApiProperty()
+  @IsString()
+  @Expose()
+  id: string;
 
-    @ApiProperty()
-    @IsString()
-    @Expose()
-    orderId: string;
+  @ApiProperty()
+  @IsString()
+  @Expose()
+  batchId: string;
 
-    @ApiProperty()
-    @IsString()
-    @Expose()
-    componentName: string;
-    
-    @ApiProperty()
-    @IsString()
-    @Expose()
-    requiredQty: string;
+  @ApiProperty({
+    enum: ScanResult,
+    enumName: 'ScanResult',
+  })
+  @IsEnum(ScanResult)
+  @Expose()
+  result: ScanResult;
 
-    @ApiProperty()
-    @IsString()
-    @Expose()
-    unit: string;
-    
-    @ApiProperty()
-    @IsString()
-    @Expose()
-    validBatches: string[];
+  @ApiProperty()
+  @IsString()
+  @Expose()
+  deviceId: string;
+
+  @ApiProperty()
+  @IsString()
+  @Expose()
+  operatorId: string;
+}
+
+export class OrderComponent implements IOrderComponentDto {
+  @ApiProperty()
+  @IsString()
+  @Expose()
+  id: string;
+
+  @ApiProperty()
+  @IsString()
+  @Expose()
+  orderId: string;
+
+  @ApiProperty()
+  @IsString()
+  @Expose()
+  componentName: string;
+
+  @ApiProperty()
+  @IsString()
+  @Expose()
+  requiredQty: string;
+
+  @ApiProperty()
+  @IsString()
+  @Expose()
+  unit: string;
+
+  @ApiProperty({
+    type: [String],
+  })
+  @IsArray()
+  @IsString({ each: true })
+  @Expose()
+  validBatches: string[];
+
+  @ApiProperty({ type: [ScanEvent] })
+  @Type(() => ScanEvent)
+  @Expose()
+  scanEvents: ScanEvent[];
 }
 
 export class OrderWithComponentsResponseDto extends OrderResponseDto {
-    @ApiProperty({ type: [OrderComponentResponseDto] })
-    @Type(() => OrderComponentResponseDto) // This is crucial!
-    @Expose()
-    components: OrderComponentResponseDto[];  
+  @ApiProperty({ type: [OrderComponent] })
+  @Type(() => OrderComponent)
+  @Expose()
+  components: OrderComponent[];
 }

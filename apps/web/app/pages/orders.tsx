@@ -1,6 +1,5 @@
-import { Link } from 'react-router';
+﻿import { Link } from 'react-router';
 import { useAllOrders } from '../features/orders/hooks/orders.hook';
-import { useQuery } from 'react-query';
 
 export default function OrdersPage() {
   const { data: orders, isLoading, isError, error } = useAllOrders();
@@ -10,11 +9,15 @@ export default function OrdersPage() {
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
         <header className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-wide text-gray-500">Orders</p>
-            <h1 className="text-2xl font-semibold text-gray-900">Заказы на производство</h1>
+            <p className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+              Заказы
+            </p>
+            <h1 className="text-2xl font-semibold text-gray-900">
+              Заказы на производство
+            </h1>
           </div>
           <span className="rounded-full bg-white px-3 py-1 text-sm text-gray-600 shadow-sm">
-            {orders?.length ?? 0} total
+            {orders?.length ?? 0} всего
           </span>
         </header>
 
@@ -26,13 +29,14 @@ export default function OrdersPage() {
 
         {isError && (
           <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">
-            Не удалось получить список заказов{error instanceof Error ? ` ${error.message}` : ''}
+            Не удалось получить список заказов
+            {error instanceof Error ? ` ${error.message}` : ''}
           </div>
         )}
 
         {!isLoading && !isError && (orders?.length ?? 0) === 0 && (
           <div className="rounded-xl border border-dashed border-gray-300 bg-white p-6 text-center text-gray-500">
-            Заказов не найдено.
+            Заказы не найдены.
           </div>
         )}
 
@@ -45,7 +49,7 @@ export default function OrdersPage() {
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
                   <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
-                    Order {order.orderNumber}
+                    Заказ №{order.orderNumber}
                   </p>
                   <Link
                     to={`/orders/${order.id}`}
@@ -60,7 +64,7 @@ export default function OrdersPage() {
                     to={`/orders/${order.id}`}
                     className="inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:bg-gray-50"
                   >
-                    Open
+                    Открыть
                   </Link>
                 </div>
               </div>
@@ -71,4 +75,3 @@ export default function OrdersPage() {
     </div>
   );
 }
-
