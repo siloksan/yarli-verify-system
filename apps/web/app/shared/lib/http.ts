@@ -1,4 +1,5 @@
-const BASE_API_URL = 'http://192.168.0.52:3000';
+// const BASE_API_URL = 'http://192.168.0.52:3000';
+const BASE_API_URL = 'http://185.10.128.182:3000'; //netlify deploy access
 
 export const HTTP_METHODS = {
   GET: 'GET',
