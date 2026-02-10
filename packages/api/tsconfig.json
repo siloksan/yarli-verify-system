@@ -5,6 +5,8 @@
     "baseUrl": "src",
     "esModuleInterop": true,
     "incremental": false,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
     "outDir": "dist",
     "types": ["node"]
   },

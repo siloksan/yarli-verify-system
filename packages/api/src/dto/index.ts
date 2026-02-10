@@ -8,7 +8,7 @@ export enum ScanResult {
   OK = 'OK',
   WRONG = 'WRONG',
 }
-
+export const TEST = 'TEST' as const;
 export interface IScanEvent {
   id: string;
   batchId: string;
