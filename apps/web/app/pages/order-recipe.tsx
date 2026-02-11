@@ -190,3 +190,8 @@ export default function OrderDetailsPage() {
     </div>
   );
 }
+
+const generateDeepLink = (orderId: string, componentId: string) => {
+  const callback = encodeURIComponent(`${window.location.origin}/orders/${orderId}/components/${componentId}/scan`);
+  return `yourexpoapp://scan?orderId=${orderId}&componentId=${componentId}&callback=${callback}`;
+};
