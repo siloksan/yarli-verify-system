@@ -1,8 +1,13 @@
 ﻿import { Link } from 'react-router';
 import { useAllOrders } from '../features/orders/hooks/orders.hook';
-
+import { OrderStatus } from '@repo/api';
 export default function OrdersPage() {
-  const { data: orders, isLoading, isError, error } = useAllOrders();
+  const {
+    data: orders,
+    isLoading,
+    isError,
+    error,
+  } = useAllOrders([OrderStatus.OPEN, OrderStatus.IN_PROGRESS]);
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 safe-padding">

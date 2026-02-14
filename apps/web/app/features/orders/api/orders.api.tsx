@@ -1,8 +1,18 @@
 import { http } from '~/shared/lib/http';
-import type { IOrderWithComponentsDto, IOrderDto } from '@repo/api';
+import {
+  OrderStatus,
+  type IOrderWithComponentsDto,
+  type IOrderDto,
+} from '@repo/api';
 
-export function getAllOrders() {
-  return http<IOrderDto[]>('/orders/list');
+export function getAllOrders(
+  statuses: OrderStatus[] = Object.values(OrderStatus),
+) {
+  return http<IOrderDto[]>('/orders/list', {
+    params: {
+      statuses,
+    },
+  });
 }
 
 export function getOrderById(orderId: string) {

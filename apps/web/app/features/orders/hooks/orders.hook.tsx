@@ -1,10 +1,11 @@
-﻿import { useQuery } from 'react-query';
+import type { OrderStatus } from '@repo/api';
+import { useQuery } from 'react-query';
 import { getAllOrders, getOrderById } from '../api/orders.api';
 
-export function useAllOrders() {
+export function useAllOrders(statuses?: OrderStatus[]) {
   return useQuery({
-    queryKey: ['orders'],
-    queryFn: getAllOrders,
+    queryKey: ['orders', statuses],
+    queryFn: () => getAllOrders(statuses),
     staleTime: 60_000, // 1 minute
   });
 }

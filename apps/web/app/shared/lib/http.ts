@@ -12,7 +12,10 @@ export const HTTP_METHODS = {
 type RequestOptions<TBody> = {
   method?: keyof typeof HTTP_METHODS;
   body?: TBody;
-  params?: Record<string, string | number | boolean | undefined>;
+  params?: Record<
+    string,
+    string | number | boolean | Array<string | number | boolean> | undefined
+  >;
   headers?: HeadersInit;
 };
 
@@ -29,7 +32,10 @@ export async function http<TResponse, TBody = unknown>(
     const queryString = Object.entries(params)
       .filter(([_, value]) => value !== undefined)
       .map(([key, value]) => {
-        return `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`;
+        const normalizedValue = Array.isArray(value)
+          ? value.join(',')
+          : String(value);
+        return `${encodeURIComponent(key)}=${encodeURIComponent(normalizedValue)}`;
       })
       .join('&');
 
