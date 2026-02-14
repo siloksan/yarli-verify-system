@@ -126,7 +126,7 @@ export default function OrderDetailsPage() {
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
         <header className="flex flex-col gap-2">
           <Link
-            to="/"
+            to="/orderPage"
             className="text-sm font-semibold text-gray-500 transition hover:text-gray-700"
           >
             Назад к заказам
@@ -325,7 +325,7 @@ const generateDeepLink = (
   validBatches: string[] = [],
 ) => {
   const callback = encodeURIComponent(
-    `${window.location.origin}/orders/${orderId}`,
+    `${window.location.origin}/orderPage/${orderId}`,
   );
   const batchesParam =
     validBatches.length > 0
