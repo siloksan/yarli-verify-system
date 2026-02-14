@@ -146,9 +146,10 @@ async function seed() {
 
   for (let orderIndex = 0; orderIndex < ORDERS.length; orderIndex += 1) {
     const order = ORDERS[orderIndex];
-    const components = COMMON_COMPONENTS.map((item) => ({
+    const components = COMMON_COMPONENTS.map((item, index) => ({
       componentCode: item.component.componentCode,
       componentName: item.component.componentName,
+      position: index + 1,
       requiredQty: item.component.requiredQty,
       unit: item.component.unit,
       validBatches:

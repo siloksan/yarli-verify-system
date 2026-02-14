@@ -1,5 +1,5 @@
 ﻿import { Link, useParams } from 'react-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ScanResult, type IOrderComponentDto } from '@repo/api';
 import { useOrder } from '~/features/orders/hooks/orders.hook';
 
@@ -34,7 +34,13 @@ export default function OrderDetailsPage() {
   } | null>(null);
 
   const { data: order, isLoading, isError, error, refetch } = useOrder(orderId);
-  const components: IOrderComponentDto[] = order?.components ?? [];
+  const components: IOrderComponentDto[] = useMemo(
+    () =>
+      [...(order?.components ?? [])].sort(
+        (first, second) => first.position - second.position,
+      ),
+    [order?.components],
+  );
 
   // 🎯 **NAVIGATION LISTENER - Listen for return from Expo app**
   // useEffect(() => {

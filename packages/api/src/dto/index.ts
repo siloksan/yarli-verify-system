@@ -22,6 +22,7 @@ export interface IOrderComponentDto {
   orderId: string;
   componentName: string;
   requiredQty: string;
+  position: number;
   unit: string;
   validBatches: string[];
   scanEvents: IScanEvent[];

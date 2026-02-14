@@ -51,12 +51,12 @@ model RecipeComponent {
   orderId         String
   componentCode   String
   componentName   String
+  position        Int
   requiredQty     Decimal          @default(0)
   unit            String?
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
   validBatches    String[]
-
   order           ProductionOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
   scanEvents      ScanEvent[]
 
