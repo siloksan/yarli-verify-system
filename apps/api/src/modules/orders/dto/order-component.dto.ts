@@ -45,7 +45,7 @@ export class OrderComponent implements IOrderComponentDto {
   @Expose()
   orderId: string;
 
- @ApiProperty()
+  @ApiProperty()
   @IsNumber()
   @Expose()
   position: number;

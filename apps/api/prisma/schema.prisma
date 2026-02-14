@@ -39,7 +39,7 @@ model ProductionOrder {
   plannedAt     DateTime?
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
-
+  status        String            @default("OPEN")
   components    RecipeComponent[]
   scanEvents    ScanEvent[]
 

@@ -1,5 +1,12 @@
-export interface IOrdersDto {
+export enum OrderStatus {
+  OPEN = 'OPEN',
+  IN_PROGRESS = 'IN_PROGRESS',
+  CLOSED = 'CLOSED',
+}
+
+export interface IOrderDto {
   orderNumber: string;
+  status: OrderStatus;
   label: string;
   id: string;
 }
@@ -8,7 +15,7 @@ export enum ScanResult {
   OK = 'OK',
   WRONG = 'WRONG',
 }
-export const TEST = 'TEST' as const;
+
 export interface IScanEvent {
   id: string;
   batchId: string;
@@ -28,7 +35,7 @@ export interface IOrderComponentDto {
   scanEvents: IScanEvent[];
 }
 
-export interface IOrderWithComponentsDto extends IOrdersDto {
+export interface IOrderWithComponentsDto extends IOrderDto {
   components: IOrderComponentDto[];
 }
 

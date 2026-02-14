@@ -1,18 +1,32 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import { Controller, Get, Param, ParseArrayPipe, Query } from '@nestjs/common';
 import { OrdersService } from './orders.service';
+import { OrderStatus } from '@repo/api';
 
 @Controller('orders')
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
   @Get('search')
-  search(@Query('q') q: string) {
-    return this.ordersService.findAll(q);
+  search(
+    @Query(
+      'statuses',
+      new ParseArrayPipe({ items: String, separator: ',', optional: true }),
+    )
+    statuses: OrderStatus[],
+    @Query('q') q: string,
+  ) {
+    return this.ordersService.searchAllByStatus(statuses, q);
   }
 
   @Get('list')
-  findAllRaw() {
-    return this.ordersService.findAll();
+  findAllRaw(
+    @Query(
+      'statuses',
+      new ParseArrayPipe({ items: String, separator: ',', optional: true }),
+    )
+    statuses: OrderStatus[],
+  ) {
+    return this.ordersService.findAllByStatus(statuses);
   }
 
   @Get(':id/recipe')
