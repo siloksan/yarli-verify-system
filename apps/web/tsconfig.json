@@ -4,7 +4,7 @@
     "**/*",
     "**/.server/**/*",
     "**/.client/**/*",
-    ".react-router/types/**/*"
+    ".react-router/types/**/*",
   ],
   "compilerOptions": {
     "lib": [

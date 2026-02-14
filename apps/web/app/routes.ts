@@ -2,10 +2,6 @@
 
 export default [
   index('pages/orders.tsx'),
-  route(
-    'orders/:orderId/components/:componentId/scan',
-    'pages/component-scan.tsx',
-  ),
   route('orders/:orderId', 'pages/order-recipe.tsx'),
   route('unsupported', 'pages/unsupported-page.tsx'),
 ] satisfies RouteConfig;
