@@ -30,3 +30,10 @@ export interface IOrderComponentDto {
 export interface IOrderWithComponentsDto extends IOrdersDto {
   components: IOrderComponentDto[];
 }
+
+export interface IComponentDto {
+  id: string;
+  code: string;
+  name: string;
+  batches: string[];
+}

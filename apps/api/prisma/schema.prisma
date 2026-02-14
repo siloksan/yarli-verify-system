@@ -69,7 +69,7 @@ model ComponentBatch {
   id             String          @id @default(uuid())
   componentId    String
   qrCodeData     String?         @unique
-  batchNumber    String
+  batchNumber    String          @unique
   lotNumber      String?
   expiresAt      DateTime?
   createdAt      DateTime        @default(now())

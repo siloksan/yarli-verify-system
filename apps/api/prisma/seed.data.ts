@@ -202,20 +202,3 @@ export const COLOR_COMPONENTS: Record<string, ComponentWithBatches> = {
     ],
   },
 };
-
-export const BASE_COMPONENT: Partial<Component> & {
-  batches: Partial<ComponentBatch>[];
-} = {
-  code: 'component-code-001',
-  name: 'компонент-1',
-  batches: [
-    {
-      batchNumber: 'П2501001',
-      expiresAt: new Date('2025-12-31'),
-    },
-    {
-      batchNumber: 'П2501002',
-      expiresAt: new Date('2025-12-31'),
-    },
-  ],
-};

@@ -3,7 +3,6 @@ import { PrismaClient } from '../generated/prisma/client';
 import { Pool } from 'pg';
 import 'dotenv/config';
 import { COMMON_COMPONENTS, COLOR_COMPONENTS } from './seed.data';
-import { Batch } from '@repo/api';
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
@@ -61,6 +60,7 @@ async function seed() {
     ...COMMON_COMPONENTS,
     ...Object.values(COLOR_COMPONENTS),
   ];
+  const generatedComponents = generateNewComponents();
   const qrCodesByComponentCode = new Map<string, string[]>();
 
   for (const item of allComponents) {
@@ -123,6 +123,27 @@ async function seed() {
     }
   }
 
+  for (const item of generatedComponents) {
+    const created = await prisma.component.create({
+      data: {
+        code: item.code,
+        name: item.name,
+      },
+      select: { id: true },
+    });
+
+    if (item.batches.length > 0) {
+      await prisma.componentBatch.createMany({
+        data: item.batches.map((batch) => ({
+          componentId: created.id,
+          batchNumber: batch.batchNumber,
+          expiresAt: batch.expiresAt,
+        })),
+        skipDuplicates: true,
+      });
+    }
+  }
+
   for (let orderIndex = 0; orderIndex < ORDERS.length; orderIndex += 1) {
     const order = ORDERS[orderIndex];
     const components = COMMON_COMPONENTS.map((item) => ({
@@ -154,9 +175,43 @@ async function seed() {
   }
 }
 
+const AMOUNT_OF_COMPONENTS = 999;
+let batchNumber = 1;
+
+function getNewBatch() {
+  return {
+	batchNumber: `П250100${batchNumber++}`,
+	expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30)
+  };
+}
+
+function generateNewComponents() {
+	const newComponents: Array<{
+		code: string;
+		name: string;
+		batches: Array<{ batchNumber: string; expiresAt: Date }>;
+	}> = [];
+
+	for (let i = 0; i < AMOUNT_OF_COMPONENTS; i++) {
+		const batches = Array.from(
+			{ length: Math.floor(Math.random() * 5) },
+			() => getNewBatch(),
+		);
+		const newComponent = {
+			code: `component-code-00-${i}`,
+			name: `компонент-${i}`,
+			batches
+		}
+
+		newComponents.push(newComponent);
+	}
+	
+	return newComponents;
+}
+
 seed()
   .catch((error) => {
-    // eslint-disable-next-line no-console
+     
     console.error('Seed failed:', error);
     process.exitCode = 1;
   })
