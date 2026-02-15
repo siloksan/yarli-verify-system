@@ -8,6 +8,7 @@ import cors from 'cors';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
   const configService = app.get(ConfigService);
   const appConfig = configService.getAppConfig();
   app.useGlobalPipes(
@@ -39,10 +40,9 @@ async function bootstrap() {
     );
   }
 
-  // for develop purpose only, remove on prod
-  app.enableCors({
+
+    app.enableCors({
     origin: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH'],
     credentials: true,
   });
 

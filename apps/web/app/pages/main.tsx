@@ -6,31 +6,41 @@ export default function MainPage() {
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
         <header>
           <p className="text-sm font-semibold uppercase tracking-wide text-gray-500">
-            Main
+            Ярли
           </p>
-          <h1 className="text-2xl font-semibold text-gray-900">Main Page</h1>
+          <h1 className="text-2xl font-semibold text-gray-900">Главное меню</h1>
         </header>
 
         <div className="grid gap-3 sm:grid-cols-2">
           <Link
-            to="/orderPage"
+            to="/orders"
             className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition hover:border-gray-300 hover:bg-gray-50"
           >
             <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
-              Route
+              Страница
             </p>
-            <p className="mt-1 text-lg font-semibold text-gray-900">orderPage</p>
+            <p className="mt-1 text-lg font-semibold text-gray-900">Открытые заказы на производство</p>
           </Link>
 
           <Link
-            to="/componentsPage"
+            to="/closed-orders"
             className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition hover:border-gray-300 hover:bg-gray-50"
           >
             <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
-              Route
+              Страница
+            </p>
+            <p className="mt-1 text-lg font-semibold text-gray-900">Закрытые заказы на производство</p>
+          </Link>
+
+          <Link
+            to="/components"
+            className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition hover:border-gray-300 hover:bg-gray-50"
+          >
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+              Страница
             </p>
             <p className="mt-1 text-lg font-semibold text-gray-900">
-              componentsPage
+              Компоненты
             </p>
           </Link>
         </div>
