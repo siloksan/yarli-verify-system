@@ -4,6 +4,7 @@
   "scripts": {
     "build": "react-router build",
     "dev": "react-router dev",
+    "dev:codespace": "react-router dev --mode codespace",
     "start": "react-router-serve ./build/server/index.js",
     "typecheck": "react-router typegen && tsc"
   },

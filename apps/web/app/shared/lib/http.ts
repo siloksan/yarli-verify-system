@@ -1,7 +1,6 @@
 // const BASE_API_URL = 'http://192.168.0.52:3000';
-// const BASE_API_URL = 'http://localhost:3000';
-const BASE_API_URL = 'https://scaling-cod-rq4jw5wvrggcpwqj-3000.app.github.dev';
-// const BASE_API_URL = 'http://185.10.128.182:3000'; //netlify deploy access
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
 export const HTTP_METHODS = {
   GET: 'GET',
@@ -27,7 +26,7 @@ export async function http<TResponse, TBody = unknown>(
   const { method = HTTP_METHODS.GET, body, params, headers } = options ?? {};
   console.log('options: ', options);
 
-  let finalUrl = `${BASE_API_URL}${endpoint || ''}`;
+  let finalUrl = `${API_BASE_URL}${endpoint || ''}`;
 
   if (params) {
     const queryString = Object.entries(params)
