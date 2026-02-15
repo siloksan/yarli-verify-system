@@ -1,5 +1,5 @@
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -14,6 +14,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Linking from 'expo-linking';
 
 import { Ionicons } from '@expo/vector-icons';
+import { CameraUnavailable } from '../components/CameraUnavailable';
+import { CameraPermission } from '../components/CameraPermission';
+import { CameraInstructions } from '../components/CameraInstructions';
 
 const { width } = Dimensions.get('window');
 const SCANNER_SIZE = width * 0.8;
@@ -23,6 +26,7 @@ export default function Scanner() {
   const [scanData, setScanData] = useState<string | null>(null);
   const [torch, setTorch] = useState(false);
   const [permission, requestPermission] = useCameraPermissions();
+  const lockScannerRef = useRef<boolean>(false);
 
   // 🟢 **URL LISTENER - Core implementation**
   useEffect(() => {
@@ -55,7 +59,6 @@ export default function Scanner() {
       handleAppStateChange,
     );
 
-    // Cleanup
     return () => {
       subscription.remove();
       appStateSubscription.remove();
@@ -63,48 +66,19 @@ export default function Scanner() {
   }, []);
 
   const handleScan = (event: { data: string; type?: string }) => {
-    if (scanned) return;
+    if (lockScannerRef.current) return;
+
     console.log('QR scanned:', event.data, event.type);
     setScanData(event.data);
     setScanned(true);
   };
 
-  const resetScan = () => {
-    setScanned(false);
-    setScanData(null);
-  };
-
   if (!permission) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.permissionContainer}>
-          <Text style={styles.permissionTitle}>Требуется доступ к камере</Text>
-          <Text style={styles.permissionSubtitle}>
-            Разрешите доступ, чтобы сканировать QR-коды
-          </Text>
-        </View>
-      </SafeAreaView>
-    );
+    return <CameraPermission />
   }
 
   if (!permission.granted) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.permissionContainer}>
-          <Text style={styles.permissionTitle}>Нет доступа к камере</Text>
-          <Text style={styles.permissionSubtitle}>
-            Нажмите кнопку ниже и разрешите доступ к камере
-          </Text>
-          <TouchableOpacity
-            style={styles.permissionButton}
-            onPress={requestPermission}
-          >
-            <Ionicons name="camera" size={20} color="#FFFFFF" />
-            <Text style={styles.permissionButtonText}>Разрешить доступ</Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    );
+    return <CameraUnavailable requestPermission={requestPermission}/>
   }
 
   return (
@@ -167,17 +141,6 @@ export default function Scanner() {
                   {torch ? 'Выключить фонарик' : 'Включить фонарик'}
                 </Text>
               </TouchableOpacity>
-
-              {/* Reset Button */}
-              {scanned && (
-                <TouchableOpacity
-                  style={styles.resetButton}
-                  onPress={resetScan}
-                >
-                  <Ionicons name="scan" size={24} color="white" />
-                  <Text style={styles.resetText}>Сканировать снова</Text>
-                </TouchableOpacity>
-              )}
             </View>
           </View>
         </CameraView>
@@ -189,34 +152,11 @@ export default function Scanner() {
           <View style={styles.resultCard}>
             <View style={styles.resultHeader}>
               <Ionicons name="checkmark-circle" size={20} color="#1E7F3F" />
-              <Text style={styles.resultTitle}>QR СЃС‡РёС‚Р°РЅ</Text>
+              <Text style={styles.resultTitle}>QR data</Text>
             </View>
             <Text style={styles.resultValue}>{scanData}</Text>
-            <TouchableOpacity style={styles.resultAction} onPress={resetScan}>
-              <Ionicons name="scan" size={18} color="#FFFFFF" />
-              <Text style={styles.resultActionText}>СЃРєР°РЅРёСЂРѕРІР°С‚СЊ РµС‰Рµ СЂР°Р·</Text>
-            </TouchableOpacity>
           </View>
-        ) : (
-          <>
-        <View style={styles.instructionItem}>
-          <Ionicons name="qr-code-outline" size={20} color="#666" />
-          <Text style={styles.instructionText}>
-            Держите QR-код в центре рамки
-          </Text>
-        </View>
-        <View style={styles.instructionItem}>
-          <Ionicons name="camera-outline" size={20} color="#666" />
-          <Text style={styles.instructionText}>Избегайте бликов и теней</Text>
-        </View>
-        <View style={styles.instructionItem}>
-          <Ionicons name="time-outline" size={20} color="#666" />
-          <Text style={styles.instructionText}>
-            Сканирование занимает 1-2 секунды
-          </Text>
-        </View>
-          </>
-        )}
+        ) : <CameraInstructions />}
       </View>
     </SafeAreaView>
   );
@@ -227,25 +167,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#000000',
   },
-  permissionContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-  },
-  permissionTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  permissionSubtitle: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.7)',
-    textAlign: 'center',
-    marginBottom: 20,
-  },
   permissionButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -253,12 +174,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 24,
-  },
-  permissionButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-    marginLeft: 8,
   },
   header: {
     paddingHorizontal: 20,
