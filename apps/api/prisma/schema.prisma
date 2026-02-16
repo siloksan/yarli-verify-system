@@ -102,3 +102,39 @@ model ScanEvent {
   @@index([batchId])
   @@index([scannedAt])
 }
+
+model Bucket {
+  id             String               @id @default(uuid())
+  componentName  String
+  creator        String
+  location       String?
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  fillingActs    FillingActBucket[]
+
+  @@map("buckets")
+}
+
+model FillingActBucket {
+  id             String               @id @default(uuid())
+  componentName  String
+  componentBatch String
+  workerName     String
+  weight         Float?
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  bucketId       String
+  componentId    String
+  orderId        String                
+
+  bucket         Bucket               @relation(fields: [bucketId], references: [id], onDelete: Cascade)
+  component      Component            @relation(fields: [componentId], references: [id], onDelete: Restrict)
+  order          ProductionOrder      @relation(fields: [orderId], references: [id], onDelete: Restrict)
+
+  @@unique([bucketId, componentBatch, orderId])
+  @@index([bucketId])
+  @@index([componentId])
+  @@index([orderId])
+  @@index([componentBatch])
+  @@map("filling_acts_bucket")
+}
