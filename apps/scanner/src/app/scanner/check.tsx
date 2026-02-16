@@ -14,9 +14,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Linking from 'expo-linking';
 
 import { Ionicons } from '@expo/vector-icons';
-import { CameraUnavailable } from '../components/CameraUnavailable';
-import { CameraPermission } from '../components/CameraPermission';
-import { CameraInstructions } from '../components/CameraInstructions';
+import { CameraUnavailable } from '../../components/CameraUnavailable';
+import { CameraPermission } from '../../components/CameraPermission';
+import { CameraInstructions } from '../../components/CameraInstructions';
 
 const { width } = Dimensions.get('window');
 const SCANNER_SIZE = width * 0.8;

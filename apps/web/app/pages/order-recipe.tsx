@@ -1,6 +1,6 @@
 ﻿import { Link, useParams } from 'react-router';
 import { useMemo, useState } from 'react';
-import { ScanResult, type IOrderComponentDto } from '@repo/api';
+import { SCANNER_ROUTES, ScanResult, type IOrderComponentDto, type ScannerRoutes } from '@repo/api';
 import { useOrder } from '~/features/orders/hooks/orders.hook';
 
 type ComponentStatus = 'unchecked' | 'ok' | 'wrong';
@@ -217,11 +217,20 @@ export default function OrderDetailsPage() {
             const remainingCount = batches.length - previewBatches.length;
             const isPending = pendingScan?.componentId === component.id;
 
-            const scannerLink = generateDeepLink(
+            const checkScannerLink = generateDeepLink(
               orderId,
               componentId,
               componentName,
               validBatches,
+              SCANNER_ROUTES.scanner_check
+            );
+
+            const checkAndFillScannerLink = generateDeepLink(
+              orderId,
+              componentId,
+              componentName,
+              validBatches,
+              SCANNER_ROUTES.scanner_check
             );
 
             return (
@@ -287,7 +296,7 @@ export default function OrderDetailsPage() {
                   </div>
 
                   <Link
-                    to={scannerLink}
+                    to={checkScannerLink}
                     onClick={() => {
                       // Store that we're navigating to scanner
                       sessionStorage.setItem(
@@ -314,6 +323,35 @@ export default function OrderDetailsPage() {
                       Сканировать QR
                     </span>
                   </Link>
+
+                  <Link
+                    to={checkAndFillScannerLink}
+                    onClick={() => {
+                      // Store that we're navigating to scanner
+                      sessionStorage.setItem(
+                        'scanning_component',
+                        component.id,
+                      );
+                    }}
+                    className="inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:bg-gray-50"
+                  >
+                    <span className="flex items-center gap-2">
+                      <svg
+                        className="h-4 w-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"
+                        />
+                      </svg>
+                      Сканировать QR с доливом
+                    </span>
+                  </Link>
                 </div>
               </div>
             );
@@ -329,6 +367,7 @@ const generateDeepLink = (
   componentId: string,
   componentName: string,
   validBatches: string[] = [],
+  scanRoutes: ScannerRoutes
 ) => {
   const callback = encodeURIComponent(
     `${window.location.origin}/orderPage/${orderId}`,
@@ -338,5 +377,5 @@ const generateDeepLink = (
       ? `&validBatches=${encodeURIComponent(JSON.stringify(validBatches))}`
       : '';
 
-  return `scanner://scanner?orderId=${orderId}&componentId=${componentId}&callback=${callback}&componentName=${encodeURIComponent(componentName)}${batchesParam}`;
+  return `scanner://${scanRoutes}?orderId=${orderId}&componentId=${componentId}&callback=${callback}&componentName=${encodeURIComponent(componentName)}${batchesParam}`;
 };
