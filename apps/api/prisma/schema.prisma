@@ -20,11 +20,9 @@ enum ScanResult {
 
 model Component {
   id             String           @id @default(uuid())
-  code           String           @unique
-  name           String
-  description    String?
+  name           String           @unique
   batches        ComponentBatch[]
-
+  fillingActs    FillingActBucket[]
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
 }
@@ -32,24 +30,22 @@ model Component {
 
 model ProductionOrder {
   id            String            @id @default(uuid())
-  externalId    String?           @unique
   orderNumber   String            @unique
   label         String
-  description   String?
   plannedAt     DateTime?
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
   status        String            @default("OPEN")
+
   components    RecipeComponent[]
   scanEvents    ScanEvent[]
-
+  fillingActs    FillingActBucket[]
   @@index([orderNumber])
 }
 
 model RecipeComponent {
   id              String           @id @default(uuid())
   orderId         String
-  componentCode   String
   componentName   String
   position        Int
   requiredQty     Decimal          @default(0)
@@ -61,16 +57,13 @@ model RecipeComponent {
   scanEvents      ScanEvent[]
 
   @@index([orderId])
-  @@index([componentCode])
-  @@unique([orderId, componentCode])
 }
 
 model ComponentBatch {
   id             String          @id @default(uuid())
   componentId    String
-  qrCodeData     String?         @unique
   batchNumber    String          @unique
-  lotNumber      String?
+  barcode        String          @unique
   expiresAt      DateTime?
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
@@ -86,7 +79,7 @@ model ScanEvent {
   orderId        String
   componentId    String
   batchId        String?
-  scannedQr      String
+  scannedCode      String
   result         ScanResult
   scannedAt      DateTime         @default(now())
   deviceId       String?
@@ -111,8 +104,6 @@ model Bucket {
   createdAt      DateTime             @default(now())
   updatedAt      DateTime             @updatedAt
   fillingActs    FillingActBucket[]
-
-  @@map("buckets")
 }
 
 model FillingActBucket {
@@ -120,7 +111,7 @@ model FillingActBucket {
   componentName  String
   componentBatch String
   workerName     String
-  weight         Float?
+  weight         Decimal?
   createdAt      DateTime             @default(now())
   updatedAt      DateTime             @updatedAt
   bucketId       String
@@ -131,10 +122,7 @@ model FillingActBucket {
   component      Component            @relation(fields: [componentId], references: [id], onDelete: Restrict)
   order          ProductionOrder      @relation(fields: [orderId], references: [id], onDelete: Restrict)
 
-  @@unique([bucketId, componentBatch, orderId])
   @@index([bucketId])
-  @@index([componentId])
   @@index([orderId])
   @@index([componentBatch])
-  @@map("filling_acts_bucket")
 }

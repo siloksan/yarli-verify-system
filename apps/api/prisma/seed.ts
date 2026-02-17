@@ -61,15 +61,13 @@ async function seed() {
     ...Object.values(COLOR_COMPONENTS),
   ];
   const generatedComponents = generateNewComponents();
-  const qrCodesByComponentCode = new Map<string, string[]>();
 
   for (const item of allComponents) {
     const created = await prisma.component.create({
       data: {
-        code: item.component.componentCode,
         name: item.component.componentName,
       },
-      select: { id: true, code: true },
+      select: { id: true },
     });
 
     if (item.batches.length > 0) {
@@ -78,55 +76,18 @@ async function seed() {
           return {
             componentId: created.id,
             batchNumber: batch.batchNumber,
+            barcode: getBarCodeEAN13ForComponent(batch.batchNumber),
             expiresAt: batch.expiresAt,
           };
         }),
         skipDuplicates: true,
       });
-
-      const batchNumbers = item.batches.map((batch) => batch.batchNumber);
-      const existingBatches = await prisma.componentBatch.findMany({
-        where: {
-          componentId: created.id,
-          batchNumber: { in: batchNumbers },
-        },
-        select: { id: true, batchNumber: true },
-      });
-
-      const qrEntries = await Promise.all(
-        existingBatches.map(async (batch) => {
-          const qrCodeData = {
-            batchId: batch.id,
-            batch: batch.batchNumber,
-            componentId: created.id,
-            componentName: item.component.componentName,
-          };
-
-          return {
-            id: batch.id,
-            batchNumber: batch.batchNumber,
-            qrCodeData: JSON.stringify(qrCodeData),
-          };
-        }),
-      );
-
-      if (qrEntries.length > 0) {
-        await prisma.$transaction(
-          qrEntries.map((batch) =>
-            prisma.componentBatch.update({
-              where: { id: batch.id },
-              data: { qrCodeData: batch.qrCodeData },
-            }),
-          ),
-        );
-      }
     }
   }
 
   for (const item of generatedComponents) {
     const created = await prisma.component.create({
       data: {
-        code: item.code,
         name: item.name,
       },
       select: { id: true },
@@ -137,6 +98,7 @@ async function seed() {
         data: item.batches.map((batch) => ({
           componentId: created.id,
           batchNumber: batch.batchNumber,
+          barcode: getBarCodeEAN13ForComponent(batch.batchNumber),
           expiresAt: batch.expiresAt,
         })),
         skipDuplicates: true,
@@ -147,13 +109,11 @@ async function seed() {
   for (let orderIndex = 0; orderIndex < ORDERS.length; orderIndex += 1) {
     const order = ORDERS[orderIndex];
     const components = COMMON_COMPONENTS.map((item, index) => ({
-      componentCode: item.component.componentCode,
       componentName: item.component.componentName,
       position: index + 1,
       requiredQty: item.component.requiredQty,
       unit: item.component.unit,
-      validBatches:
-        qrCodesByComponentCode.get(item.component.componentCode) ?? [],
+      validBatches: [],
     }));
 
     if (components.length !== 8) {
@@ -166,7 +126,6 @@ async function seed() {
       data: {
         orderNumber: order.orderNumber,
         label: order.label,
-        description: order.description,
         plannedAt: order.plannedAt,
         components: {
           create: components,
@@ -181,41 +140,61 @@ let batchNumber = 1;
 
 function getNewBatch() {
   return {
-	batchNumber: `П250100${batchNumber++}`,
-	expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30)
+    batchNumber: `П250100${batchNumber++}`,
+    expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30),
   };
 }
 
 function generateNewComponents() {
-	const newComponents: Array<{
-		code: string;
-		name: string;
-		batches: Array<{ batchNumber: string; expiresAt: Date }>;
-	}> = [];
+  const newComponents: Array<{
+    code: string;
+    name: string;
+    batches: Array<{ batchNumber: string; expiresAt: Date }>;
+  }> = [];
 
-	for (let i = 0; i < AMOUNT_OF_COMPONENTS; i++) {
-		const batches = Array.from(
-			{ length: Math.floor(Math.random() * 5) },
-			() => getNewBatch(),
-		);
-		const newComponent = {
-			code: `component-code-00-${i}`,
-			name: `компонент-${i}`,
-			batches
-		}
+  for (let i = 0; i < AMOUNT_OF_COMPONENTS; i++) {
+    const batches = Array.from({ length: Math.floor(Math.random() * 5) }, () =>
+      getNewBatch(),
+    );
+    const newComponent = {
+      code: `component-code-00-${i}`,
+      name: `компонент-${i}`,
+      batches,
+    };
 
-		newComponents.push(newComponent);
-	}
-	
-	return newComponents;
+    newComponents.push(newComponent);
+  }
+
+  return newComponents;
 }
 
 seed()
   .catch((error) => {
-     
     console.error('Seed failed:', error);
     process.exitCode = 1;
   })
   .finally(async () => {
     await prisma.$disconnect();
   });
+
+function calculateEAN13Checksum(codeWithoutChecksum: string) {
+  const digits = codeWithoutChecksum.split('').map(Number);
+
+  const sum = digits.reduce((acc, digit, index) => {
+    const isEvenPosition = (index + 1) % 2 === 0;
+    return acc + digit * (isEvenPosition ? 3 : 1);
+  }, 0);
+  const checksum = (10 - (sum % 10)) % 10;
+  return checksum.toString();
+}
+
+function getBarCodeEAN13ForComponent(batch: string) {
+  const baseCode = '200000000000';
+  const batchNumber = Number.parseInt(batch.replaceAll(/\D/g, ''), 10);
+  const codeWithoutChecksum = (
+    BigInt(baseCode) + BigInt(batchNumber)
+  ).toString();
+
+  const checksum = calculateEAN13Checksum(codeWithoutChecksum);
+  return codeWithoutChecksum + checksum;
+}
