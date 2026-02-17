@@ -74,11 +74,11 @@ export default function Scanner() {
   };
 
   if (!permission) {
-    return <CameraPermission />
+    return <CameraPermission />;
   }
 
   if (!permission.granted) {
-    return <CameraUnavailable requestPermission={requestPermission}/>
+    return <CameraUnavailable requestPermission={requestPermission} />;
   }
 
   return (
@@ -87,9 +87,9 @@ export default function Scanner() {
 
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Сканирование QR-кода</Text>
+        <Text style={styles.headerTitle}>Сканирование штрих-кода</Text>
         <Text style={styles.headerSubtitle}>
-          Наведите камеру на QR-код компонента
+          Наведите камеру на штрих-код компонента
         </Text>
       </View>
 
@@ -99,7 +99,7 @@ export default function Scanner() {
           style={styles.camera}
           onBarcodeScanned={scanned ? undefined : handleScan}
           barcodeScannerSettings={{
-            barcodeTypes: ['qr'],
+            barcodeTypes: ['ean13'],
           }}
           enableTorch={torch}
         >
@@ -152,11 +152,13 @@ export default function Scanner() {
           <View style={styles.resultCard}>
             <View style={styles.resultHeader}>
               <Ionicons name="checkmark-circle" size={20} color="#1E7F3F" />
-              <Text style={styles.resultTitle}>QR data</Text>
+              <Text style={styles.resultTitle}>Отсканированные данные</Text>
             </View>
             <Text style={styles.resultValue}>{scanData}</Text>
           </View>
-        ) : <CameraInstructions />}
+        ) : (
+          <CameraInstructions />
+        )}
       </View>
     </SafeAreaView>
   );

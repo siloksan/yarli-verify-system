@@ -85,7 +85,7 @@ model ScanEvent {
   deviceId       String?
   operatorId     String?
   notes          String?
-
+  
   order          ProductionOrder  @relation(fields: [orderId], references: [id], onDelete: Cascade)
   component      RecipeComponent  @relation(fields: [componentId], references: [id], onDelete: Cascade)
   batch          ComponentBatch?  @relation(fields: [batchId], references: [id], onDelete: SetNull)

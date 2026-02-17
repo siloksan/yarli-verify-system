@@ -382,5 +382,5 @@ const generateDeepLink = (
       ? `&validBatches=${encodeURIComponent(JSON.stringify(validBatches))}`
       : '';
 
-  return `scanner://${scanRoutes}?orderId=${orderId}&componentId=${componentId}&callback=${callback}&componentName=${encodeURIComponent(componentName)}${batchesParam}`;
+  return `scanner://${scanRoutes}?orderId=${orderId}&componentId=${componentId}&componentName=${encodeURIComponent(componentName)}${batchesParam}&callback=${callback}`;
 };

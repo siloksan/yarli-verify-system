@@ -56,8 +56,18 @@ export interface IBatchDto {
 
 export interface ICreateScanEventDto {
   scannedCode: string;
+  componentName: string;
+  componentId: string;
   orderId: string;
   deviceId: string;
   operatorId: string;
   validBatches: string[];
+}
+
+export interface IScanEventDto {
+  id: string;
+  orderId: string;
+  scannedComponentName: string;
+  scannedComponentBatch: string;
+  scanResult: ScanResult;
 }
