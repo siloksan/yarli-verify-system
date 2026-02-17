@@ -79,7 +79,7 @@ model ScanEvent {
   orderId        String
   componentId    String
   batchId        String?
-  scannedCode      String
+  scannedCode    String
   result         ScanResult
   scannedAt      DateTime         @default(now())
   deviceId       String?

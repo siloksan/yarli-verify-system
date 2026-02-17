@@ -1,6 +1,11 @@
 ﻿import { Link, useParams } from 'react-router';
 import { useMemo, useState } from 'react';
-import { SCANNER_ROUTES, ScanResult, type IOrderComponentDto, type ScannerRoutes } from '@repo/api';
+import {
+  SCANNER_ROUTES,
+  ScanResult,
+  type IOrderComponentDto,
+  type ScannerRoutes,
+} from '@repo/api';
 import { useOrder } from '~/features/orders/hooks/orders.hook';
 
 type ComponentStatus = 'unchecked' | 'ok' | 'wrong';
@@ -222,7 +227,7 @@ export default function OrderDetailsPage() {
               componentId,
               componentName,
               validBatches,
-              SCANNER_ROUTES.scanner_check
+              SCANNER_ROUTES.scanner_check,
             );
 
             const checkAndFillScannerLink = generateDeepLink(
@@ -230,7 +235,7 @@ export default function OrderDetailsPage() {
               componentId,
               componentName,
               validBatches,
-              SCANNER_ROUTES.scanner_check
+              SCANNER_ROUTES.scanner_check,
             );
 
             return (
@@ -366,8 +371,8 @@ const generateDeepLink = (
   orderId: string,
   componentId: string,
   componentName: string,
+  scanRoutes: ScannerRoutes,
   validBatches: string[] = [],
-  scanRoutes: ScannerRoutes
 ) => {
   const callback = encodeURIComponent(
     `${window.location.origin}/orderPage/${orderId}`,

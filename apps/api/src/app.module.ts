@@ -8,6 +8,8 @@ import { AppService } from './app.service';
 import { AppController } from './app.controller';
 import { OrdersModule } from './modules/orders/orders.module';
 import { ComponentsModule } from './modules/components/components.module';
+import { BatchesModule } from './modules/batches/batches.module';
+import { ScanEventsModule } from './modules/scan-events/scan-events.module';
 
 @Module({
   imports: [
@@ -37,6 +39,8 @@ import { ComponentsModule } from './modules/components/components.module';
     PrismaModule,
     OrdersModule,
     ComponentsModule,
+    BatchesModule,
+    ScanEventsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

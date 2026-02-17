@@ -19,12 +19,6 @@ export class ComponentsService {
               },
             },
             {
-              code: {
-                contains: search,
-                mode: Prisma.QueryMode.insensitive,
-              },
-            },
-            {
               batches: {
                 some: {
                   batchNumber: {
@@ -52,7 +46,6 @@ export class ComponentsService {
 
     const mapped = result.map((component) => ({
       id: component.id,
-      code: component.code,
       name: component.name,
       batches: component.batches.map((batch) => batch.batchNumber),
     }));
@@ -62,7 +55,7 @@ export class ComponentsService {
     });
   }
 
-  async findOne(id: string) {
+  async findOneById(id: string) {
     const component = await this.prisma.component.findUnique({
       where: { id },
       include: {
@@ -82,7 +75,6 @@ export class ComponentsService {
       ComponentDto,
       {
         id: component.id,
-        code: component.code,
         name: component.name,
         batches: component.batches.map((batch) => batch.batchNumber),
       },

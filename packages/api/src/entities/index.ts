@@ -10,7 +10,6 @@ export interface IQrCodeInfo {
   batch: string;
   expiresAt: Date;
   componentId: string;
-  componentCode: string;
 }
 
 export interface IComponentBatchQrPayload {

@@ -17,6 +17,6 @@ export class ComponentsController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.componentsService.findOne(id);
+    return this.componentsService.findOneById(id);
   }
 }

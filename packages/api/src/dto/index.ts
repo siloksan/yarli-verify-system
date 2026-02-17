@@ -45,3 +45,19 @@ export interface IComponentDto {
   name: string;
   batches: string[];
 }
+
+export interface IBatchDto {
+  id: string;
+  batch: string;
+  componentId: string;
+  componentName: string;
+  code: string;
+}
+
+export interface ICreateScanEventDto {
+  scannedCode: string;
+  orderId: string;
+  deviceId: string;
+  operatorId: string;
+  validBatches: string[];
+}
