@@ -63,7 +63,7 @@ export default function Scanner() {
           }
           scanned={state.status !== 'idle'}
           scanData={
-            state.status !== 'idle' ? state.data : null
+            state.status === 'idle' ? null : state.data
           }
           validationResult={
             state.status === 'success' ? state.result : null

@@ -1,12 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { validateCode } from '../api/validate-code';
 
-import { useLocalSearchParams } from 'expo-router';
 import * as Linking from 'expo-linking';
-import { ScannerCheckParams, ScanResult } from '@repo/api';
-
-const RESET_DELAY_MS = 1500;
-
+import { ScannerCheckParams, ScannerValidationResult, ScanResult } from '@repo/api';
+import { useFocusEffect } from 'expo-router';
 
 type ValidationResultState = {
   scanResult: ScanResult;
@@ -35,10 +32,20 @@ const parseValidBatches = (value?: string) => {
   }
 }
 
+function getResponseUrl(callback: string, params: ScannerValidationResult) {
+  const callbackUrl = new URL(callback);
+  for (const [key, value] of Object.entries(params)) {
+    callbackUrl.searchParams.set(key, value);
+  }
+  
+  return callbackUrl.toString();
+}
+
 export function useScannerValidation(params:ScannerCheckParams) {
   const [state, setState] = useState<ScannerState>({ status: 'idle' });
   const lockRef = useRef(false);
-  const timeoutRef = useRef<number | null>(null);
+  const canScanRef = useRef(false);
+  const armTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const deepLinkParams = useMemo(() => {
     return {
@@ -52,15 +59,42 @@ export function useScannerValidation(params:ScannerCheckParams) {
     };
   }, [params]);
 
+  const armScanner = useCallback(() => {
+    canScanRef.current = false;
+    if (armTimeoutRef.current) {
+      clearTimeout(armTimeoutRef.current);
+    }
+
+    // Ignore stale camera events right after returning to scanner screen.
+    armTimeoutRef.current = setTimeout(() => {
+      canScanRef.current = true;
+      armTimeoutRef.current = null;
+    }, 350);
+  }, []);
+
   const reset = useCallback(() => {
     lockRef.current = false;
     setState({ status: 'idle' });
-  }, []);
+    armScanner();
+  }, [armScanner]);
+
+  useFocusEffect(
+    useCallback(() => {
+      reset();
+      return () => {
+        canScanRef.current = false;
+        if (armTimeoutRef.current) {
+          clearTimeout(armTimeoutRef.current);
+          armTimeoutRef.current = null;
+        }
+      };
+    }, [reset]),
+  );
 
 
   const handleScan = useCallback(
     async (event: { data: string }) => {
-      if (lockRef.current) return;
+      if (!canScanRef.current || lockRef.current) return;
       lockRef.current = true;
 
       const { orderId, componentId, componentName, validBatches, callback } =
@@ -96,21 +130,14 @@ export function useScannerValidation(params:ScannerCheckParams) {
           data: event.data,
         });
 
-        if (result.scanResult !== ScanResult.OK) {
-        }
-
         if (callback) {
+          const callbackUrl = getResponseUrl(callback, {
+            scanResult: result.scanResult,
+            scannedComponentName: result.scannedComponentName,
+            scannedComponentBatch: result.scannedComponentBatch,
+          });
 
-          const callbackUrl = new URL(callback);
-          callbackUrl.searchParams.set('scanResult', result.scanResult);
-          callbackUrl.searchParams.set('componentId', componentId);
-          callbackUrl.searchParams.set(
-            'scannedBatch',
-            result.scannedComponentBatch,
-          );
-          callbackUrl.searchParams.set('scannedCode', event.data);
-
-          // await Linking.openURL(callbackUrl.toString());
+          await Linking.openURL(callbackUrl.toString());
         }
   
       } catch (error) {
@@ -121,7 +148,6 @@ export function useScannerValidation(params:ScannerCheckParams) {
 
         if (deepLinkParams.callback && deepLinkParams.componentId) {
           try {
-            // validateCallbackUrl(deepLinkParams.callback);
 
             const callbackUrl = new URL(deepLinkParams.callback);
             callbackUrl.searchParams.set('scanError', message);
@@ -129,8 +155,6 @@ export function useScannerValidation(params:ScannerCheckParams) {
               'componentId',
               deepLinkParams.componentId,
             );
-
-            // await Linking.openURL(callbackUrl.toString());
           } catch {}
         }
 
