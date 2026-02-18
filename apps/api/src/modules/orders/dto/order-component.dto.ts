@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IOrderComponentDto, type IScanEvent, ScanResult } from '@repo/api';
 import { Expose, Type } from 'class-transformer';
-import { IsArray, IsEnum, IsNumber, IsString } from 'class-validator';
+import { IsArray, IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
 import { OrderResponseDto } from './order.dto';
 
 class ScanEvent implements IScanEvent {
@@ -32,6 +32,12 @@ class ScanEvent implements IScanEvent {
   @IsString()
   @Expose()
   operatorId: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  @Expose()
+  scannedComponentBatch?: string;
 }
 
 export class OrderComponent implements IOrderComponentDto {

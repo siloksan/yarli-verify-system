@@ -38,19 +38,15 @@ export class ComponentsService {
       include: {
         batches: {
           select: {
+            id: true,
             batchNumber: true,
+            barcode: true,
           },
         },
       },
     });
 
-    const mapped = result.map((component) => ({
-      id: component.id,
-      name: component.name,
-      batches: component.batches.map((batch) => batch.batchNumber),
-    }));
-
-    return plainToInstance(ComponentDto, mapped, {
+    return plainToInstance(ComponentDto, result, {
       excludeExtraneousValues: true,
     });
   }
@@ -61,7 +57,9 @@ export class ComponentsService {
       include: {
         batches: {
           select: {
+            id: true,
             batchNumber: true,
+            barcode: true,
           },
         },
       },
@@ -71,16 +69,8 @@ export class ComponentsService {
       throw new NotFoundException('Component not found');
     }
 
-    return plainToInstance(
-      ComponentDto,
-      {
-        id: component.id,
-        name: component.name,
-        batches: component.batches.map((batch) => batch.batchNumber),
-      },
-      {
-        excludeExtraneousValues: true,
-      },
-    );
+    return plainToInstance(ComponentDto, component, {
+      excludeExtraneousValues: true,
+    });
   }
 }

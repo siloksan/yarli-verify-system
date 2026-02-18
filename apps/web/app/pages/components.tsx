@@ -1,13 +1,14 @@
 import { type IComponentBatchQrPayload, type IComponentDto } from '@repo/api';
-import { Link } from 'react-router';
 import { useMemo, useState } from 'react';
+import { Link } from 'react-router';
 import { useAllComponents } from '~/features/components/hooks/components.hook';
 
-type QrState = {
+type BarcodeState = {
   imageUrl: string;
   payload: string;
   componentName: string;
   batch: string;
+  ean13: string;
 };
 
 export default function ComponentsPage() {
@@ -16,7 +17,7 @@ export default function ComponentsPage() {
   );
   const [search, setSearch] = useState('');
   const [searchInput, setSearchInput] = useState('');
-  const [qrState, setQrState] = useState<QrState | null>(null);
+  const [barcodeState, setBarcodeState] = useState<BarcodeState | null>(null);
 
   const { data: components, isLoading, isError, error } = useAllComponents(
     search || undefined,
@@ -28,33 +29,34 @@ export default function ComponentsPage() {
     }, 0);
   }, [components]);
 
-  const handlePrintQr = () => {
-    if (!qrState || typeof window === 'undefined') {
+  const handlePrintBarcode = () => {
+    if (!barcodeState || typeof window === 'undefined') {
       return;
     }
 
-    const printWindow = window.open('', '_blank', 'width=800,height=800');
+    const printWindow = window.open('', '_blank', 'width=900,height=700');
     if (!printWindow) {
       return;
     }
 
-    const safeName = escapeHtml(qrState.componentName);
-    const safeBatch = escapeHtml(qrState.batch);
-    const safeImageUrl = escapeHtml(qrState.imageUrl);
+    const safeName = escapeHtml(barcodeState.componentName);
+    const safeBatch = escapeHtml(barcodeState.batch);
+    const safeImageUrl = escapeHtml(barcodeState.imageUrl);
+    const safeEan13 = escapeHtml(barcodeState.ean13);
 
     printWindow.document.write(`
 <!doctype html>
 <html>
-  <head>  
+  <head>
     <meta charset="utf-8" />
-    <title>QR Label</title>
+    <title>EAN-13 Label</title>
     <style>
       body {
         margin: 0;
         font-family: Arial, sans-serif;
       }
       .label {
-        width: 320px;
+        width: 420px;
         margin: 24px auto;
         border: 1px solid #d1d5db;
         border-radius: 12px;
@@ -68,16 +70,20 @@ export default function ComponentsPage() {
       }
       .batch {
         font-size: 16px;
-        margin: 0 0 16px 0;
+        margin: 0 0 12px 0;
       }
-      .qr {
-        width: 260px;
-        height: 260px;
+      .barcode {
+        width: 100%;
+        max-width: 380px;
+        height: auto;
+      }
+      .ean {
+        margin: 12px 0 0 0;
+        font-size: 18px;
+        letter-spacing: 0.08em;
+        font-weight: 700;
       }
       @media print {
-        body {
-          margin: 0;
-        }
         .label {
           border: none;
           margin: 0 auto;
@@ -90,7 +96,8 @@ export default function ComponentsPage() {
     <div class="label">
       <p class="name">${safeName}</p>
       <p class="batch">Batch: ${safeBatch}</p>
-      <img class="qr" src="${safeImageUrl}" alt="QR code" />
+      <img class="barcode" src="${safeImageUrl}" alt="EAN-13 barcode" />
+      <p class="ean">${safeEan13}</p>
     </div>
     <script>
       window.onload = () => {
@@ -225,7 +232,9 @@ export default function ComponentsPage() {
                       </div>
                     )}
 
-                    {component.batches.map((batch) => (
+                    {component.batches.map((batch) => {
+                      const {barcode, batchNumber, id} = batch;
+                      return (
                       <div
                         key={`${component.id}-${batch}`}
                         className="flex flex-col gap-2 rounded-xl border border-gray-200 bg-gray-50 p-3 sm:flex-row sm:items-center sm:justify-between"
@@ -235,27 +244,31 @@ export default function ComponentsPage() {
                             Партия
                           </p>
                           <p className="truncate text-sm font-semibold text-gray-700">
-                            {batch}
+                            {batchNumber}
                           </p>
                         </div>
                         <button
                           type="button"
                           onClick={() => {
-                            const payload = buildBatchQrPayload(component, batch);
+                            const payload = buildBatchQrPayload(component, batchNumber);
                             const payloadString = JSON.stringify(payload);
-                            setQrState({
+                            console.log('barcode: ', barcode);
+
+                            setBarcodeState({
                               payload: payloadString,
                               componentName: component.name,
-                              batch,
-                              imageUrl: createQrImageUrl(payloadString),
+                              batch: batchNumber,
+                              ean13: barcode,
+                              imageUrl: createEan13ImageUrl(barcode),
                             });
                           }}
                           className="inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:bg-gray-100"
                         >
-                          Создать QR
+                          Создать EAN-13
                         </button>
                       </div>
-                    ))}
+                    )
+                    })}
                   </div>
                 )}
               </div>
@@ -264,22 +277,24 @@ export default function ComponentsPage() {
         </div>
       </div>
 
-      {qrState && (
+      {barcodeState && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="w-full max-w-sm rounded-2xl bg-white p-4 shadow-lg">
             <div className="mb-3 flex items-start justify-between gap-3">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
-                  QR данные
+                  EAN-13 данные
                 </p>
                 <h3 className="text-base font-semibold text-gray-900">
-                  {qrState.componentName}
+                  {barcodeState.componentName}
                 </h3>
-                <p className="text-sm text-gray-500">Партия: {qrState.batch}</p>
+                <p className="text-sm text-gray-500">
+                  Партия: {barcodeState.batch}
+                </p>
               </div>
               <button
                 type="button"
-                onClick={() => setQrState(null)}
+                onClick={() => setBarcodeState(null)}
                 className="rounded-lg px-2 py-1 text-sm text-gray-500 hover:bg-gray-100"
               >
                 Закрыть
@@ -288,22 +303,26 @@ export default function ComponentsPage() {
 
             <div className="flex justify-center rounded-xl border border-gray-200 bg-gray-50 p-3">
               <img
-                src={qrState.imageUrl}
-                alt={`QR ${qrState.componentName} ${qrState.batch}`}
-                className="h-52 w-52"
+                src={barcodeState.imageUrl}
+                alt={`EAN-13 ${barcodeState.componentName} ${barcodeState.batch}`}
+                className="w-full max-w-[320px]"
               />
             </div>
 
+            <p className="mt-3 rounded-lg bg-gray-50 p-2 text-center font-mono text-sm font-semibold tracking-wider text-gray-700">
+              {barcodeState.ean13}
+            </p>
+
             <p className="mt-3 break-all rounded-lg bg-gray-50 p-2 text-xs text-gray-600">
-              {qrState.payload}
+              {barcodeState.payload}
             </p>
 
             <button
               type="button"
-              onClick={handlePrintQr}
+              onClick={handlePrintBarcode}
               className="mt-3 inline-flex w-full items-center justify-center rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:bg-gray-100"
             >
-              Print QR
+              Print EAN-13
             </button>
           </div>
         </div>
@@ -333,6 +352,20 @@ function buildBatchQrPayload(
   };
 }
 
-function createQrImageUrl(payload: string) {
-  return `https://quickchart.io/qr?size=260&text=${encodeURIComponent(payload)}`;
+function createEan13ImageUrl(ean13: string) {
+  return `https://quickchart.io/barcode?type=ean13&width=520&height=180&includeText=false&text=${encodeURIComponent(ean13)}`;
+}
+
+function createEan13FromPayload(payload: string) {
+  const digits = payload.replace(/\D/g, '');
+  const base12 = digits.padEnd(12, '0').slice(0, 12);
+
+  let sum = 0;
+  for (let i = 0; i < base12.length; i += 1) {
+    const value = Number(base12[i]);
+    sum += i % 2 === 0 ? value : value * 3;
+  }
+
+  const checkDigit = (10 - (sum % 10)) % 10;
+  return `${base12}${checkDigit}`;
 }

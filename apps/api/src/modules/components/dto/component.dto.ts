@@ -1,7 +1,24 @@
-import { ApiProperty } from "@nestjs/swagger";
-import { IComponentDto } from "@repo/api";
-import { Expose } from "class-transformer";
-import { IsArray, IsString } from "class-validator";
+import { ApiProperty } from '@nestjs/swagger';
+import { IBatchInfo, IComponentDto } from '@repo/api';
+import { Expose, Type } from 'class-transformer';
+import { IsArray, IsString } from 'class-validator';
+
+export class BatchInfoDto implements IBatchInfo {
+  @ApiProperty()
+  @IsString()
+  @Expose()
+  id: string;
+
+  @ApiProperty()
+  @IsString()
+  @Expose()
+  batchNumber: string;
+
+  @ApiProperty()
+  @IsString()
+  @Expose()
+  barcode: string;
+}
 
 export class ComponentDto implements IComponentDto {
   @ApiProperty()
@@ -12,18 +29,11 @@ export class ComponentDto implements IComponentDto {
   @ApiProperty()
   @IsString()
   @Expose()
-  code: string;
-
-  @ApiProperty()
-  @IsString()
-  @Expose()
   name: string;
 
-  @ApiProperty({
-    type: [String],
-  })
+  @ApiProperty({ type: [BatchInfoDto] })
   @IsArray()
-  @IsString({ each: true })
+  @Type(() => BatchInfoDto)
   @Expose()
-  batches: string[];
+  batches: BatchInfoDto[];
 }

@@ -1,9 +1,10 @@
-﻿import { Link, useParams } from 'react-router';
-import { useMemo, useState } from 'react';
+import { Link, useParams } from 'react-router';
+import { useEffect, useMemo, useState } from 'react';
 import {
   SCANNER_ROUTES,
   ScanResult,
   type IOrderComponentDto,
+  type ScannerCheckParams,
   type ScannerRoutes,
 } from '@repo/api';
 import { useOrder } from '~/features/orders/hooks/orders.hook';
@@ -36,6 +37,12 @@ export default function OrderDetailsPage() {
   const [pendingScan, setPendingScan] = useState<{
     componentId: string;
     batch?: string;
+    result: ScanResult;
+  } | null>(null);
+  const [latestScanMessage, setLatestScanMessage] = useState<{
+    result: ScanResult;
+    componentId: string;
+    batch?: string;
   } | null>(null);
 
   const { data: order, isLoading, isError, error, refetch } = useOrder(orderId);
@@ -47,79 +54,77 @@ export default function OrderDetailsPage() {
     [order?.components],
   );
 
-  // 🎯 **NAVIGATION LISTENER - Listen for return from Expo app**
-  // useEffect(() => {
-  //   // Check if we're returning from scanner with result in URL
-  //   const handleNavigation = () => {
-  //     const url = new URL(window.location.href);
-  //     const scanResult = url.searchParams.get('scanResult');
-  //     const scanError = url.searchParams.get('scanError');
-  //     const componentId = url.searchParams.get('componentId');
-  //     const batch = url.searchParams.get('batch');
+  useEffect(() => {
+    const handleNavigation = () => {
+      const url = new URL(window.location.href);
+      const scanResultRaw = url.searchParams.get('scanResult');
+      const componentId = url.searchParams.get('componentId');
+      const scannedBatch = url.searchParams.get('scannedBatch');
+      const scanError = url.searchParams.get('scanError');
 
-  //     if (scanResult === 'success' && componentId) {
-  //       // Show success toast
-  //       const component = components.find((c) => c.id === componentId);
+      const scanResult =
+        scanResultRaw === ScanResult.OK || scanResultRaw === ScanResult.WRONG
+          ? scanResultRaw
+          : null;
 
-  //       // Store pending scan for optimistic update
-  //       setPendingScan({
-  //         componentId,
-  //         batch: batch ? decodeURIComponent(batch) : undefined,
-  //       });
+      if (scanResult && componentId) {
+        const batch = scannedBatch ? decodeURIComponent(scannedBatch) : undefined;
 
-  //       // Refresh order data
-  //       refetch();
+        setPendingScan({
+          componentId,
+          batch,
+          result: scanResult,
+        });
 
-  //       // Clean URL parameters without page reload
-  //       url.searchParams.delete('scanResult');
-  //       url.searchParams.delete('scanError');
-  //       url.searchParams.delete('componentId');
-  //       url.searchParams.delete('batch');
-  //       window.history.replaceState({}, '', url.toString());
-  //     }
+        setLatestScanMessage({
+          result: scanResult,
+          componentId,
+          batch,
+        });
 
-  //     if (scanError && componentId) {
-  //       const component = components.find((c) => c.id === componentId);
+        refetch();
+      }
 
-  //       // Clean URL parameters
-  //       url.searchParams.delete('scanResult');
-  //       url.searchParams.delete('scanError');
-  //       url.searchParams.delete('componentId');
-  //       url.searchParams.delete('batch');
-  //       window.history.replaceState({}, '', url.toString());
-  //     }
-  //   };
+      if (scanError && componentId) {
+        setLatestScanMessage({
+          result: ScanResult.WRONG,
+          componentId,
+        });
+      }
 
-  //   // Listen for page visibility change (when returning from mobile app)
-  //   const handleVisibilityChange = () => {
-  //     if (document.visibilityState === 'visible') {
-  //       handleNavigation();
-  //     }
-  //   };
+      url.searchParams.delete('scanResult');
+      url.searchParams.delete('componentId');
+      url.searchParams.delete('scannedBatch');
+      url.searchParams.delete('scannedCode');
+      url.searchParams.delete('scanError');
+      window.history.replaceState({}, '', url.toString());
+    };
 
-  //   // Listen for navigation events
-  //   const handlePopState = () => {
-  //     handleNavigation();
-  //   };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        handleNavigation();
+      }
+    };
 
-  //   // Check immediately on mount
-  //   handleNavigation();
+    const handlePopState = () => {
+      handleNavigation();
+    };
 
-  //   // Add event listeners
-  //   document.addEventListener('visibilitychange', handleVisibilityChange);
-  //   window.addEventListener('popstate', handlePopState);
+    handleNavigation();
 
-  //   // Cleanup
-  //   return () => {
-  //     document.removeEventListener('visibilitychange', handleVisibilityChange);
-  //     window.removeEventListener('popstate', handlePopState);
-  //   };
-  // }, [orderId, components, refetch]);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [refetch]);
 
   const getStatus = (component: IOrderComponentDto): ComponentStatus => {
     // Use optimistic status if available
     if (pendingScan?.componentId === component.id) {
-      return 'ok';
+      return pendingScan.result === ScanResult.OK ? 'ok' : 'wrong';
     }
 
     const latestResult = component.scanEvents?.[0]?.result;
@@ -166,6 +171,25 @@ export default function OrderDetailsPage() {
             </div>
           </div>
         </header>
+
+        {latestScanMessage && (
+          <section
+            className={`rounded-2xl border px-4 py-3 text-sm ${
+              latestScanMessage.result === ScanResult.OK
+                ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+                : 'border-rose-200 bg-rose-50 text-rose-800'
+            }`}
+          >
+            <p className="font-semibold">
+              {latestScanMessage.result === ScanResult.OK
+                ? 'Сканирование успешно'
+                : 'Сканирование не прошло проверку'}
+            </p>
+            {latestScanMessage.batch && (
+              <p className="mt-1">Партия: {latestScanMessage.batch}</p>
+            )}
+          </section>
+        )}
 
         <section className="grid gap-3 rounded-2xl border border-gray-200 bg-white p-4 sm:grid-cols-3">
           {(['unchecked', 'ok', 'wrong'] as const).map((status) => (
@@ -221,21 +245,35 @@ export default function OrderDetailsPage() {
             const previewBatches = batches.slice(0, 3);
             const remainingCount = batches.length - previewBatches.length;
             const isPending = pendingScan?.componentId === component.id;
+            const scannedBatchesFromEvents = Array.from(
+              new Set(
+                (component.scanEvents ?? [])
+                  .map((event) => event.scannedComponentBatch)
+                  .filter((batch): batch is string => Boolean(batch)),
+              ),
+            );
+            const scannedBatches = Array.from(
+              new Set(
+                isPending && pendingScan?.batch
+                  ? [pendingScan.batch, ...scannedBatchesFromEvents]
+                  : scannedBatchesFromEvents,
+              ),
+            );
 
             const checkScannerLink = generateDeepLink(
               orderId,
               componentId,
               componentName,
-              validBatches,
               SCANNER_ROUTES.scanner_check,
+              validBatches,
             );
 
             const checkAndFillScannerLink = generateDeepLink(
               orderId,
               componentId,
               componentName,
+              SCANNER_ROUTES.scanner_check_and_fill,
               validBatches,
-              SCANNER_ROUTES.scanner_check,
             );
 
             return (
@@ -264,8 +302,15 @@ export default function OrderDetailsPage() {
                       Требуется: {component.requiredQty} {component.unit ?? ''}
                     </p>
                     {isPending && pendingScan?.batch && (
-                      <p className="mt-1 text-sm text-emerald-600">
-                        ✓ Отсканировано: партия {pendingScan.batch}
+                      <p
+                        className={`mt-1 text-sm ${
+                          pendingScan.result === ScanResult.OK
+                            ? 'text-emerald-600'
+                            : 'text-rose-600'
+                        }`}
+                      >
+                        {pendingScan.result === ScanResult.OK ? '✓' : '✕'}{' '}
+                        Отсканировано: партия {pendingScan.batch}
                       </p>
                     )}
                   </div>
@@ -358,6 +403,25 @@ export default function OrderDetailsPage() {
                     </span>
                   </Link>
                 </div>
+
+                <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+                  <span className="font-semibold text-gray-500">
+                    Сканированные партии:
+                  </span>
+                  {scannedBatches.length === 0 && (
+                    <span className="rounded-full bg-gray-100 px-3 py-1 text-gray-500">
+                      пока нет
+                    </span>
+                  )}
+                  {scannedBatches.map((batch) => (
+                    <span
+                      key={`${component.id}-${batch}`}
+                      className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700"
+                    >
+                      {batch}
+                    </span>
+                  ))}
+                </div>
               </div>
             );
           })}
@@ -374,13 +438,18 @@ const generateDeepLink = (
   scanRoutes: ScannerRoutes,
   validBatches: string[] = [],
 ) => {
-  const callback = encodeURIComponent(
-    `${window.location.origin}/orderPage/${orderId}`,
-  );
-  const batchesParam =
-    validBatches.length > 0
-      ? `&validBatches=${encodeURIComponent(JSON.stringify(validBatches))}`
-      : '';
+  const rawParams: Omit<ScannerCheckParams, 'validBatches'> = {
+    orderId,
+    componentId,
+    componentName,
+    callback: `${window.location.origin}/orders/${orderId}`,
+  }
 
-  return `scanner://${scanRoutes}?orderId=${orderId}&componentId=${componentId}&componentName=${encodeURIComponent(componentName)}${batchesParam}&callback=${callback}`;
+  const params = new URLSearchParams(rawParams);
+
+  if (validBatches.length > 0) {
+    params.set('validBatches', JSON.stringify(validBatches));
+  }
+
+  return `scanner:///${scanRoutes}?${params.toString()}`;
 };

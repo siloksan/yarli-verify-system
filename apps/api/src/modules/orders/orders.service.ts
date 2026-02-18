@@ -76,6 +76,13 @@ export class OrdersService {
           include: {
             scanEvents: {
               orderBy: { scannedAt: 'desc' },
+              include: {
+                batch: {
+                  select: {
+                    batchNumber: true,
+                  },
+                },
+              },
             },
           },
         },
@@ -86,7 +93,18 @@ export class OrdersService {
       throw new NotFoundException('Order not found');
     }
 
-    return plainToInstance(OrderWithComponentsResponseDto, order, {
+    const normalizedOrder = {
+      ...order,
+      components: order.components.map((component) => ({
+        ...component,
+        scanEvents: component.scanEvents.map((event) => ({
+          ...event,
+          scannedComponentBatch: event.batch?.batchNumber,
+        })),
+      })),
+    };
+
+    return plainToInstance(OrderWithComponentsResponseDto, normalizedOrder, {
       excludeExtraneousValues: true,
       enableImplicitConversion: true,
     });

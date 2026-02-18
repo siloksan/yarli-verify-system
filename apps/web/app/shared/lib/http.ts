@@ -1,6 +1,6 @@
 // const BASE_API_URL = 'http://192.168.0.52:3000';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export const HTTP_METHODS = {
   GET: 'GET',

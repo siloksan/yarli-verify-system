@@ -22,6 +22,7 @@ export interface IScanEvent {
   result: ScanResult;
   deviceId: string;
   operatorId: string;
+  scannedComponentBatch?: string;
 }
 
 export interface IOrderComponentDto {
@@ -39,11 +40,16 @@ export interface IOrderWithComponentsDto extends IOrderDto {
   components: IOrderComponentDto[];
 }
 
+export interface IBatchInfo {
+  id: string;
+  batchNumber: string;
+  barcode: string;
+}
+
 export interface IComponentDto {
   id: string;
-  code: string;
   name: string;
-  batches: string[];
+  batches: IBatchInfo[];
 }
 
 export interface IBatchDto {
