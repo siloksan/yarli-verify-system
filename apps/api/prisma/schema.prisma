@@ -19,12 +19,13 @@ enum ScanResult {
 }
 
 model Component {
-  id             String           @id @default(uuid())
-  name           String           @unique
-  batches        ComponentBatch[]
-  fillingActs    FillingActBucket[]
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
+  id                String           @id @default(uuid())
+  name              String           @unique
+  recipeComponents  RecipeComponent[]
+  batches           ComponentBatch[]
+  fillingActs       FillingActBucket[]
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
 }
 
 
@@ -46,6 +47,7 @@ model ProductionOrder {
 model RecipeComponent {
   id              String           @id @default(uuid())
   orderId         String
+  componentId     String?
   componentName   String
   position        Int
   requiredQty     Decimal          @default(0)
@@ -54,9 +56,11 @@ model RecipeComponent {
   updatedAt       DateTime         @updatedAt
   validBatches    String[]
   order           ProductionOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  component       Component?      @relation(fields: [componentId], references: [id], onDelete: SetNull)
   scanEvents      ScanEvent[]
 
   @@index([orderId])
+  @@index([componentId])
 }
 
 model ComponentBatch {
