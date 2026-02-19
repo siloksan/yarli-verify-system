@@ -1,5 +1,5 @@
 import { Link, useParams } from 'react-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, type MouseEvent } from 'react';
 import {
   SCANNER_ROUTES,
   ScanResult,
@@ -32,6 +32,39 @@ const statusStyles: Record<
   },
 };
 
+type NativeScanResultMessage = {
+  type: 'SCAN_RESULT';
+  payload: {
+    scanResult?: ScanResult;
+    componentId?: string;
+    scannedBatch?: string;
+  };
+};
+
+type NativeOpenScannerMessage = {
+  type: 'OPEN_SCANNER';
+  payload: ScannerCheckParams & {
+    route: ScannerRoutes;
+  };
+};
+
+const isRunningInNativeWebView = () => {
+  const nativeBridge = (
+    window as Window & {
+      ReactNativeWebView?: { postMessage: (message: string) => void };
+    }
+  ).ReactNativeWebView;
+  return typeof nativeBridge?.postMessage === 'function';
+};
+
+const postMessageToNative = (message: NativeOpenScannerMessage) => {
+  (
+    window as Window & {
+      ReactNativeWebView?: { postMessage: (payload: string) => void };
+    }
+  ).ReactNativeWebView?.postMessage(JSON.stringify(message));
+};
+
 export default function OrderDetailsPage() {
   const { orderId } = useParams();
   const [pendingScan, setPendingScan] = useState<{
@@ -54,6 +87,25 @@ export default function OrderDetailsPage() {
     [order?.components],
   );
 
+  const applyScanResult = useCallback(
+    (componentId: string, scanResult: ScanResult, batch?: string) => {
+      setPendingScan({
+        componentId,
+        batch,
+        result: scanResult,
+      });
+
+      setLatestScanMessage({
+        result: scanResult,
+        componentId,
+        batch,
+      });
+
+      refetch();
+    },
+    [refetch],
+  );
+
   useEffect(() => {
     const handleNavigation = () => {
       const url = new URL(window.location.href);
@@ -69,20 +121,7 @@ export default function OrderDetailsPage() {
 
       if (scanResult && componentId) {
         const batch = scannedBatch ? decodeURIComponent(scannedBatch) : undefined;
-
-        setPendingScan({
-          componentId,
-          batch,
-          result: scanResult,
-        });
-
-        setLatestScanMessage({
-          result: scanResult,
-          componentId,
-          batch,
-        });
-
-        refetch();
+        applyScanResult(componentId, scanResult, batch);
       }
 
       if (scanError && componentId) {
@@ -100,6 +139,23 @@ export default function OrderDetailsPage() {
       window.history.replaceState({}, '', url.toString());
     };
 
+    const handleNativeScanResult = (event: Event) => {
+      const nativeEvent = event as CustomEvent<NativeScanResultMessage>;
+      const payload = nativeEvent.detail?.payload;
+      const scanResult = payload?.scanResult;
+      const componentId = payload?.componentId;
+
+      if (
+        !componentId ||
+        !scanResult ||
+        (scanResult !== ScanResult.OK && scanResult !== ScanResult.WRONG)
+      ) {
+        return;
+      }
+
+      applyScanResult(componentId, scanResult, payload?.scannedBatch);
+    };
+
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         handleNavigation();
@@ -114,12 +170,17 @@ export default function OrderDetailsPage() {
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('popstate', handlePopState);
+    window.addEventListener('native-scan-result', handleNativeScanResult as EventListener);
 
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener(
+        'native-scan-result',
+        handleNativeScanResult as EventListener,
+      );
     };
-  }, [refetch]);
+  }, [applyScanResult]);
 
   const getStatus = (component: IOrderComponentDto): ComponentStatus => {
     // Use optimistic status if available
@@ -260,21 +321,43 @@ export default function OrderDetailsPage() {
               ),
             );
 
-            const checkScannerLink = generateDeepLink(
+            const checkScannerPayload = generateScannerPayload(
               orderId,
               componentId,
               componentName,
               SCANNER_ROUTES.scanner_check,
               validBatches,
             );
+            const checkScannerLink = generateDeepLink(checkScannerPayload);
 
-            const checkAndFillScannerLink = generateDeepLink(
+            const checkAndFillScannerPayload = generateScannerPayload(
               orderId,
               componentId,
               componentName,
               SCANNER_ROUTES.scanner_check_and_fill,
               validBatches,
             );
+            const checkAndFillScannerLink = generateDeepLink(
+              checkAndFillScannerPayload,
+            );
+
+            const handleScannerPress = (
+              event: MouseEvent<HTMLAnchorElement>,
+              scannerPayload: NativeOpenScannerMessage['payload'],
+            ) => {
+              // Store that we're navigating to scanner
+              sessionStorage.setItem('scanning_component', component.id);
+
+              if (!isRunningInNativeWebView()) {
+                return;
+              }
+
+              event.preventDefault();
+              postMessageToNative({
+                type: 'OPEN_SCANNER',
+                payload: scannerPayload,
+              });
+            };
 
             return (
               <div
@@ -347,13 +430,9 @@ export default function OrderDetailsPage() {
 
                   <Link
                     to={checkScannerLink}
-                    onClick={() => {
-                      // Store that we're navigating to scanner
-                      sessionStorage.setItem(
-                        'scanning_component',
-                        component.id,
-                      );
-                    }}
+                    onClick={(event) =>
+                      handleScannerPress(event, checkScannerPayload)
+                    }
                     className="inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:bg-gray-50"
                   >
                     <span className="flex items-center gap-2">
@@ -376,13 +455,9 @@ export default function OrderDetailsPage() {
 
                   <Link
                     to={checkAndFillScannerLink}
-                    onClick={() => {
-                      // Store that we're navigating to scanner
-                      sessionStorage.setItem(
-                        'scanning_component',
-                        component.id,
-                      );
-                    }}
+                    onClick={(event) =>
+                      handleScannerPress(event, checkAndFillScannerPayload)
+                    }
                     className="inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:bg-gray-50"
                   >
                     <span className="flex items-center gap-2">
@@ -431,25 +506,36 @@ export default function OrderDetailsPage() {
   );
 }
 
-const generateDeepLink = (
+const generateScannerPayload = (
   orderId: string,
   componentId: string,
   componentName: string,
   scanRoutes: ScannerRoutes,
   validBatches: string[] = [],
+) => ({
+  orderId,
+  componentId,
+  componentName,
+  validBatches,
+  callback: `${window.location.origin}/orders/${orderId}`,
+  route: scanRoutes,
+});
+
+const generateDeepLink = (
+  scannerPayload: NativeOpenScannerMessage['payload'],
 ) => {
   const rawParams: Omit<ScannerCheckParams, 'validBatches'> = {
-    orderId,
-    componentId,
-    componentName,
-    callback: `${window.location.origin}/orders/${orderId}`,
-  }
+    orderId: scannerPayload.orderId,
+    componentId: scannerPayload.componentId,
+    componentName: scannerPayload.componentName,
+    callback: scannerPayload.callback,
+  };
 
   const params = new URLSearchParams(rawParams);
 
-  if (validBatches.length > 0) {
-    params.set('validBatches', JSON.stringify(validBatches));
+  if ((scannerPayload.validBatches ?? []).length > 0) {
+    params.set('validBatches', JSON.stringify(scannerPayload.validBatches));
   }
 
-  return `scanner:///${scanRoutes}?${params.toString()}`;
+  return `scanner:///${scannerPayload.route}?${params.toString()}`;
 };

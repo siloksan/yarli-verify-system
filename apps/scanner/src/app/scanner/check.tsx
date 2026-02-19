@@ -1,5 +1,5 @@
 import { useCameraPermissions } from 'expo-camera';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -9,7 +9,7 @@ import {
   Text,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import { CameraUnavailable } from '../../components/CameraUnavailable';
 import { CameraPermission } from '../../components/CameraPermission';
@@ -23,13 +23,39 @@ import { ScannerCheckParams } from '@repo/api';
 const { width } = Dimensions.get('window');
 const SCANNER_SIZE = width * 0.8;
 
+const getParamValue = (value?: string | string[]) =>
+  Array.isArray(value) ? value[0] : value;
+
 export default function Scanner() {
   const [torch, setTorch] = useState(false);
   const [permission, requestPermission] = useCameraPermissions();
+  const router = useRouter();
 
   const params = useLocalSearchParams<ScannerCheckParams>();
 
   const { state, handleScan, reset } = useScannerValidation(params);
+  const orderId = getParamValue(params.orderId);
+  const componentId = getParamValue(params.componentId);
+
+  useEffect(() => {
+    if (
+      state.status !== 'success' ||
+      !orderId ||
+      !componentId
+    ) {
+      return;
+    }
+
+    router.replace({
+      pathname: '/order-recipe',
+      params: {
+        orderId,
+        componentId,
+        scanResult: state.result.scanResult,
+        scannedBatch: state.result.scannedComponentBatch,
+      },
+    });
+  }, [componentId, orderId, router, state]);
 
   if (!permission) {
     return <CameraPermission />;

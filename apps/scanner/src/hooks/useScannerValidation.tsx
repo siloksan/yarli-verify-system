@@ -1,8 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { validateCode } from '../api/validate-code';
 
-import * as Linking from 'expo-linking';
-import { ScannerCheckParams, ScannerValidationResult, ScanResult } from '@repo/api';
+import { ScannerCheckParams, ScanResult } from '@repo/api';
 import { useFocusEffect } from 'expo-router';
 
 type ValidationResultState = {
@@ -32,15 +31,6 @@ const parseValidBatches = (value?: string) => {
   }
 }
 
-function getResponseUrl(callback: string, params: ScannerValidationResult) {
-  const callbackUrl = new URL(callback);
-  for (const [key, value] of Object.entries(params)) {
-    callbackUrl.searchParams.set(key, value);
-  }
-  
-  return callbackUrl.toString();
-}
-
 export function useScannerValidation(params:ScannerCheckParams) {
   const [state, setState] = useState<ScannerState>({ status: 'idle' });
   const lockRef = useRef(false);
@@ -55,7 +45,6 @@ export function useScannerValidation(params:ScannerCheckParams) {
       validBatches: parseValidBatches(
         getParamValue(params.validBatches),
       ),
-      callback: getParamValue(params.callback),
     };
   }, [params]);
 
@@ -97,7 +86,7 @@ export function useScannerValidation(params:ScannerCheckParams) {
       if (!canScanRef.current || lockRef.current) return;
       lockRef.current = true;
 
-      const { orderId, componentId, componentName, validBatches, callback } =
+      const { orderId, componentId, componentName, validBatches } =
         deepLinkParams;
 
       if (!orderId || !componentId || !componentName) {
@@ -129,34 +118,12 @@ export function useScannerValidation(params:ScannerCheckParams) {
           },
           data: event.data,
         });
-
-        if (callback) {
-          const callbackUrl = getResponseUrl(callback, {
-            scanResult: result.scanResult,
-            scannedComponentName: result.scannedComponentName,
-            scannedComponentBatch: result.scannedComponentBatch,
-          });
-
-          await Linking.openURL(callbackUrl.toString());
-        }
   
       } catch (error) {
         const message =
           error instanceof Error ? error.message : 'Code validation error.';
 
         setState({ status: 'error', message, data: event.data });
-
-        if (deepLinkParams.callback && deepLinkParams.componentId) {
-          try {
-
-            const callbackUrl = new URL(deepLinkParams.callback);
-            callbackUrl.searchParams.set('scanError', message);
-            callbackUrl.searchParams.set(
-              'componentId',
-              deepLinkParams.componentId,
-            );
-          } catch {}
-        }
 
       }
     },
