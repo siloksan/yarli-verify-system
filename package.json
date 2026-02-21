@@ -19,18 +19,22 @@
     "prettier": "^3.2.5",
     "turbo": "^2.8.3"
   },
-  "packageManager": "pnpm@8.15.5",
   "engines": {
     "node": ">=18"
   },
   "dependencies": {
+    "pino": "^10.3.1",
+    "pino-http": "^11.0.0",
     "react": "19.1.0",
     "react-dom": "19.1.0"
   },
-  "pnpm": {
-    "overrides": {
-      "react": "19.1.0",
-      "react-dom": "19.1.0"
-    }
-  }
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "resolutions": {
+    "react": "19.1.0",
+    "react-dom": "19.1.0"
+  },
+  "packageManager": "yarn@4.12.0"
 }

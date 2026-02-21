@@ -5,7 +5,7 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "dev": "pnpm build --watch",
+    "dev": "yarn build --watch",
     "build": "tsc -b -v",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\""
   },
