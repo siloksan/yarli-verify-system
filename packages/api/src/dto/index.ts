@@ -1,3 +1,6 @@
+export * from './bucket.dto';
+export * from './filling-bucket-act.dto';
+
 export enum OrderStatus {
   OPEN = 'OPEN',
   IN_PROGRESS = 'IN_PROGRESS',

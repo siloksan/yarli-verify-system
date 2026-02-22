@@ -10,6 +10,8 @@ import { OrdersModule } from './modules/orders/orders.module';
 import { ComponentsModule } from './modules/components/components.module';
 import { BatchesModule } from './modules/batches/batches.module';
 import { ScanEventsModule } from './modules/scan-events/scan-events.module';
+import { BucketsModule } from './modules/buckets/buckets.module';
+import { FillingBucketActsModule } from './modules/filling-bucket-acts/filling-bucket-acts.module';
 
 @Module({
   imports: [
@@ -41,6 +43,8 @@ import { ScanEventsModule } from './modules/scan-events/scan-events.module';
     ComponentsModule,
     BatchesModule,
     ScanEventsModule,
+    BucketsModule,
+    FillingBucketActsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
