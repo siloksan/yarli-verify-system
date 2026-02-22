@@ -1,62 +1,19 @@
 import { Link, useParams } from 'react-router';
+import { useMemo } from 'react';
 import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-  type MouseEvent,
-} from 'react';
-import {
-  SCANNER_ROUTES,
   ScanResult,
   type IOrderComponentDto,
   type IScanEvent,
 } from '@repo/api';
 import { useOrder } from '~/features/orders/hooks/orders.hook';
-import { useNativeFeatures } from '~/shared/hooks';
 import { Component } from '~/features/order-recipe/ui/component';
 import { STATUS_STYLES } from '~/features/order-recipe/constants';
-
-// type NativeScanResultMessage = {
-//   type: 'SCAN_RESULT';
-//   payload: {
-//     scanResult?: ScanResult;
-//     componentId?: string;
-//     scannedBatch?: string;
-//   };
-// };
-
-// type NativeOpenScannerMessage = {
-//   type: 'OPEN_SCANNER';
-//   payload: ScannerCheckParams & {
-//     route: ScannerRoutes;
-//   };
-// };
-
-// const postMessageToNative = (message: NativeOpenScannerMessage) => {
-//   (
-//     window as Window & {
-//       ReactNativeWebView?: { postMessage: (payload: string) => void };
-//     }
-//   ).ReactNativeWebView?.postMessage(JSON.stringify(message));
-// };
+import type { ComponentStatus } from '~/features/order-recipe/types';
 
 export default function OrderDetailsPage() {
   const { orderId } = useParams();
-  console.log('orderId: ', orderId);
-  const [pendingScan, setPendingScan] = useState<{
-    componentId: string;
-    batch?: string;
-    result: ScanResult;
-  } | null>(null);
 
-  const [latestScanMessage, setLatestScanMessage] = useState<{
-    result: ScanResult;
-    componentId: string;
-    batch?: string;
-  } | null>(null);
-
-  const { data: order, isLoading, isError, error, refetch } = useOrder(orderId);
+  const { data: order, isLoading, isError, error } = useOrder(orderId);
   const components: IOrderComponentDto[] = useMemo(
     () =>
       [...(order?.components ?? [])].sort(
@@ -64,122 +21,6 @@ export default function OrderDetailsPage() {
       ),
     [order?.components],
   );
-
-  // const applyScanResult = useCallback(
-  //   (componentId: string, scanResult: ScanResult, batch?: string) => {
-  //     setPendingScan({
-  //       componentId,
-  //       batch,
-  //       result: scanResult,
-  //     });
-
-  //     setLatestScanMessage({
-  //       result: scanResult,
-  //       componentId,
-  //       batch,
-  //     });
-
-  //     refetch();
-  //   },
-  //   [refetch],
-  // );
-
-  // useEffect(() => {
-  //   const handleNavigation = () => {
-  //     const url = new URL(window.location.href);
-  //     const scanResultRaw = url.searchParams.get('scanResult');
-  //     const componentId = url.searchParams.get('componentId');
-  //     const scannedBatch = url.searchParams.get('scannedBatch');
-  //     const scanError = url.searchParams.get('scanError');
-
-  //     const scanResult =
-  //       scanResultRaw === ScanResult.OK || scanResultRaw === ScanResult.WRONG
-  //         ? scanResultRaw
-  //         : null;
-
-  //     if (scanResult && componentId) {
-  //       const batch = scannedBatch
-  //         ? decodeURIComponent(scannedBatch)
-  //         : undefined;
-  //       applyScanResult(componentId, scanResult, batch);
-  //     }
-
-  //     if (scanError && componentId) {
-  //       setLatestScanMessage({
-  //         result: ScanResult.WRONG,
-  //         componentId,
-  //       });
-  //     }
-
-  //     url.searchParams.delete('scanResult');
-  //     url.searchParams.delete('componentId');
-  //     url.searchParams.delete('scannedBatch');
-  //     url.searchParams.delete('scannedCode');
-  //     url.searchParams.delete('scanError');
-  //     window.history.replaceState({}, '', url.toString());
-  //   };
-
-  //   const handleNativeScanResult = (event: Event) => {
-  //     const nativeEvent = event as CustomEvent<NativeScanResultMessage>;
-  //     const payload = nativeEvent.detail?.payload;
-  //     const scanResult = payload?.scanResult;
-  //     const componentId = payload?.componentId;
-
-  //     if (
-  //       !componentId ||
-  //       !scanResult ||
-  //       (scanResult !== ScanResult.OK && scanResult !== ScanResult.WRONG)
-  //     ) {
-  //       return;
-  //     }
-
-  //     applyScanResult(componentId, scanResult, payload?.scannedBatch);
-  //   };
-
-  //   const handleVisibilityChange = () => {
-  //     if (document.visibilityState === 'visible') {
-  //       handleNavigation();
-  //     }
-  //   };
-
-  //   const handlePopState = () => {
-  //     handleNavigation();
-  //   };
-
-  //   handleNavigation();
-
-  //   document.addEventListener('visibilitychange', handleVisibilityChange);
-  //   window.addEventListener('popstate', handlePopState);
-  //   window.addEventListener(
-  //     'native-scan-result',
-  //     handleNativeScanResult as EventListener,
-  //   );
-
-  //   return () => {
-  //     document.removeEventListener('visibilitychange', handleVisibilityChange);
-  //     window.removeEventListener('popstate', handlePopState);
-  //     window.removeEventListener(
-  //       'native-scan-result',
-  //       handleNativeScanResult as EventListener,
-  //     );
-  //   };
-  // }, [applyScanResult]);
-
-  // const getStatus = (component: IOrderComponentDto): ComponentStatus => {
-  //   // Use optimistic status if available
-  //   if (pendingScan?.componentId === component.id) {
-  //     return pendingScan.result === ScanResult.OK ? 'ok' : 'wrong';
-  //   }
-
-  //   const latestResult = component.scanEvents?.[0]?.result;
-  //   if (latestResult === ScanResult.OK) return 'ok';
-  //   if (latestResult === ScanResult.WRONG) return 'wrong';
-  //   return 'unchecked';
-  // };
-
-  // const checkedCount = components.filter(
-  //   (component) => getStatus(component) === 'ok',
-  // ).length;
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 safe-padding">
@@ -205,35 +46,8 @@ export default function OrderDetailsPage() {
                   : `ID ${orderId}`}
               </p>
             </div>
-            {/* <div className="rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-600 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
-                Прогресс
-              </p>
-              <p className="text-lg font-semibold text-gray-900">
-                {checkedCount} / {components.length}
-              </p>
-            </div> */}
           </div>
         </header>
-
-        {latestScanMessage && (
-          <section
-            className={`rounded-2xl border px-4 py-3 text-sm ${
-              latestScanMessage.result === ScanResult.OK
-                ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
-                : 'border-rose-200 bg-rose-50 text-rose-800'
-            }`}
-          >
-            <p className="font-semibold">
-              {latestScanMessage.result === ScanResult.OK
-                ? 'Сканирование успешно'
-                : 'Сканирование не прошло проверку'}
-            </p>
-            {latestScanMessage.batch && (
-              <p className="mt-1">Партия: {latestScanMessage.batch}</p>
-            )}
-          </section>
-        )}
 
         <section className="grid gap-3 rounded-2xl border border-gray-200 bg-white p-4 sm:grid-cols-3">
           {(['UNCHECKED', 'OK', 'WRONG'] as const).map((status) => (
@@ -282,65 +96,9 @@ export default function OrderDetailsPage() {
               componentName,
               id: componentId,
               validBatches,
+              scanEvents,
             } = component;
-            // const status = getStatus(component);
-            // const style = statusStyles[status];
-            const batches = component.validBatches ?? [];
-            const previewBatches = batches.slice(0, 3);
-            const remainingCount = batches.length - previewBatches.length;
-            const isPending = pendingScan?.componentId === component.id;
-            const scannedBatchesFromEvents = Array.from(
-              new Set(
-                (component.scanEvents ?? [])
-                  .map((event) => event.scannedComponentBatch)
-                  .filter((batch): batch is string => Boolean(batch)),
-              ),
-            );
-            const scannedBatches = Array.from(
-              new Set(
-                isPending && pendingScan?.batch
-                  ? [pendingScan.batch, ...scannedBatchesFromEvents]
-                  : scannedBatchesFromEvents,
-              ),
-            );
-
-            // const checkScannerPayload = generateScannerPayload(
-            //   orderId,
-            //   componentId,
-            //   componentName,
-            //   SCANNER_ROUTES.scanner_check,
-            //   validBatches,
-            // );
-            // const checkScannerLink = generateDeepLink(checkScannerPayload);
-
-            // const checkAndFillScannerPayload = generateScannerPayload(
-            //   orderId,
-            //   componentId,
-            //   componentName,
-            //   SCANNER_ROUTES.scanner_check_and_fill,
-            //   validBatches,
-            // );
-            // const checkAndFillScannerLink = generateDeepLink(
-            //   checkAndFillScannerPayload,
-            // );
-
-            // const handleScannerPress = (
-            //   event: MouseEvent<HTMLAnchorElement>,
-            //   scannerPayload: NativeOpenScannerMessage['payload'],
-            // ) => {
-            //   // Store that we're navigating to scanner
-            //   sessionStorage.setItem('scanning_component', component.id);
-
-            //   if (!isRunningInNativeWebView()) {
-            //     return;
-            //   }
-
-            //   event.preventDefault();
-            //   postMessageToNative({
-            //     type: 'OPEN_SCANNER',
-            //     payload: scannerPayload,
-            //   });
-            // };
+            const status = getStatus(scanEvents);
 
             return (
               <Component
@@ -350,8 +108,8 @@ export default function OrderDetailsPage() {
                 componentName={componentName}
                 requiredQty={component.requiredQty}
                 unit={component.unit}
-                status={'UNCHECKED'}
-                validBatches={batches}
+                status={status}
+                validBatches={validBatches}
                 scanEvents={component.scanEvents ?? []}
               />
             );
@@ -362,36 +120,10 @@ export default function OrderDetailsPage() {
   );
 }
 
-// const generateScannerPayload = (
-//   orderId: string,
-//   componentId: string,
-//   componentName: string,
-//   scanRoutes: ScannerRoutes,
-//   validBatches: string[] = [],
-// ) => ({
-//   orderId,
-//   componentId,
-//   componentName,
-//   validBatches,
-//   callback: `${window.location.origin}/orders/${orderId}`,
-//   route: scanRoutes,
-// });
+function getStatus(events: IScanEvent[] | undefined): ComponentStatus {
+  if (!events || events.length === 0) return 'UNCHECKED';
 
-// const generateDeepLink = (
-//   scannerPayload: NativeOpenScannerMessage['payload'],
-// ) => {
-//   const rawParams: Omit<ScannerCheckParams, 'validBatches'> = {
-//     orderId: scannerPayload.orderId,
-//     componentId: scannerPayload.componentId,
-//     componentName: scannerPayload.componentName,
-//     callback: scannerPayload.callback,
-//   };
+  const isWrong = events.some((event) => event.result === ScanResult.WRONG);
 
-//   const params = new URLSearchParams(rawParams);
-
-//   if ((scannerPayload.validBatches ?? []).length > 0) {
-//     params.set('validBatches', JSON.stringify(scannerPayload.validBatches));
-//   }
-
-//   return `scanner:///${scannerPayload.route}?${params.toString()}`;
-// };
+  return isWrong ? ScanResult.WRONG : ScanResult.OK;
+}

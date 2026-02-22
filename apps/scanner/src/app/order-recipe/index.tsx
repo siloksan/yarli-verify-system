@@ -1,6 +1,5 @@
-import Constants from 'expo-constants';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 import { WebToAppMessage } from '@repo/api';
@@ -10,13 +9,19 @@ import {
 } from '@/src/shared/stores';
 
 // const WEB_CLIENT_URL = process.env.EXPO_PUBLIC_WEB_CLIENT_BASE_URL;
-// const WEB_CLIENT_URL = 'http://172.24.96.1:5173';
 const WEB_CLIENT_URL = 'http://192.168.0.52:5173';
 
 export default function OrderRecipeWebView() {
   const webViewRef = useRef<WebView>(null);
+  const [webViewKey, setWebViewKey] = useState(0);
   const setWebViewRef = useWebViewBridgeStore((s) => s.setWebViewRef);
   const router = useRouter();
+
+  useFocusEffect(
+    useCallback(() => {
+      setWebViewKey((prev) => prev + 1);
+    }, []),
+  );
 
   useEffect(() => {
     setWebViewRef(webViewRef.current);
@@ -24,7 +29,7 @@ export default function OrderRecipeWebView() {
     return () => {
       setWebViewRef(null);
     };
-  }, []);
+  }, [setWebViewRef, webViewKey]);
 
   const setRequest = useScannerSessionStore((s) => s.setRequest);
   const params = useLocalSearchParams();
@@ -61,8 +66,10 @@ export default function OrderRecipeWebView() {
     );
   }
 
+  // key use only for prototype flow to reset webview state when navigate back from scanner screen. In real app we should handle this via postMessage and not reset whole webview
   return (
     <WebView
+      key={webViewKey}
       ref={webViewRef}
       style={styles.container}
       source={{ uri: sourceUri }}
@@ -74,7 +81,6 @@ export default function OrderRecipeWebView() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    marginTop: Constants.statusBarHeight,
   },
   fallbackContainer: {
     flex: 1,

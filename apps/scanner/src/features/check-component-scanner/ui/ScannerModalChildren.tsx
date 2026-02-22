@@ -62,7 +62,12 @@ export function ScannerModalChildren({
               size={20}
               color={isSuccess ? '#1E7F3F' : '#B42318'}
             />
-            <Text style={styles.resultTitle}>
+            <Text
+              style={[
+                styles.resultTitle,
+                { color: isSuccess ? '#1E7F3F' : '#B42318' },
+              ]}
+            >
               {isSuccess ? 'Код проверен' : 'Код не совпадает'}
             </Text>
           </View>
@@ -127,7 +132,6 @@ const styles = StyleSheet.create({
   resultTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#1E7F3F',
     marginLeft: 8,
   },
   resultValue: {

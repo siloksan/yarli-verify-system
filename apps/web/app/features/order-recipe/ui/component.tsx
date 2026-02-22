@@ -25,17 +25,6 @@ export function Component({
   scanEvents,
 }: Props) {
   const { dot, label, badge } = STATUS_STYLES[status];
-  const scannedBatchesFromEvents = Array.from(
-    new Set(
-      scanEvents.map((event) => {
-        if (event.scannedComponentBatch) {
-          return event.scannedComponentBatch;
-        } else {
-          return 'не определено';
-        }
-      }),
-    ),
-  );
 
   const native = useNativeFeatures();
 
@@ -107,10 +96,10 @@ export function Component({
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth={2}
-                d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"
+                d="M4 5v14m3-14v14m2-14v14m4-14v14m2-14v14m3-14v14M3 5h18M3 19h18"
               />
             </svg>
-            Сканировать QR
+            Сканировать код
           </span>
         </button>
       </div>
@@ -119,19 +108,28 @@ export function Component({
         <span className="font-semibold text-gray-500">
           Сканированные партии:
         </span>
-        {scannedBatchesFromEvents.length === 0 && (
+        {scanEvents.length === 0 && (
           <span className="rounded-full bg-gray-100 px-3 py-1 text-gray-500">
             пока нет
           </span>
         )}
-        {scannedBatchesFromEvents.map((batch) => (
-          <span
-            key={`${componentId}-${batch}`}
-            className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700"
-          >
-            {batch}
-          </span>
-        ))}
+        {scanEvents.map((event) => {
+          const backgroundColor =
+            event.result === 'OK' ? 'bg-emerald-50' : 'bg-red-50';
+          const textColor =
+            event.result === 'OK' ? 'text-emerald-700' : 'text-red-700';
+
+          return (
+            <span
+              key={`${componentId}-${event.id}`}
+              className={`rounded-full ${backgroundColor} px-3 py-1 ${textColor}`}
+            >
+              {event.scannedComponentBatch
+                ? event.scannedComponentBatch
+                : 'не определено'}
+            </span>
+          );
+        })}
       </div>
     </div>
   );

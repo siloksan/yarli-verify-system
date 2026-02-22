@@ -22,11 +22,11 @@ export function RootLayout() {
       <Stack.Screen name="index" options={{ title: 'Home' }} />
       <Stack.Screen
         name={SCANNER_ROUTES.scanner_check}
-        options={{ title: 'Сканирование' }}
+        options={{ title: 'Сканируйте компонент' }}
       />
       <Stack.Screen
         name={SCANNER_ROUTES.scanner_check_and_fill}
-        options={{ title: 'Сканирование' }}
+        options={{ title: 'Сканирование и заполнение' }}
       />
       <Stack.Screen
         name="order-recipe/index"
