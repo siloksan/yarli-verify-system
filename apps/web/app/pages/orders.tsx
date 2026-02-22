@@ -57,7 +57,7 @@ export default function OrdersPage() {
                     Заказ №{order.orderNumber}
                   </p>
                   <Link
-                    to={`/orders/${order.id}`}
+                    to={`scanner:///order-recipe?orderId=${order.id}`}
                     className="block truncate text-lg font-semibold text-gray-900 transition hover:text-gray-700"
                   >
                     {order.label}
@@ -66,7 +66,7 @@ export default function OrdersPage() {
 
                 <div className="flex flex-wrap items-center gap-2">
                   <Link
-                    to={`/orders/${order.id}`}
+                    to={`scanner:///order-recipe?orderId=${order.id}`}
                     className="inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:bg-gray-50"
                   >
                     Открыть

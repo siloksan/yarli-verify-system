@@ -1,7 +1,6 @@
 import { ScanResult } from '@repo/api';
 import { Ionicons } from '@expo/vector-icons';
 import { Text, View, StyleSheet } from 'react-native';
-import { CameraInstructions } from './CameraInstructions';
 
 type ValidationResultState = {
   scanResult: ScanResult;
@@ -73,8 +72,6 @@ export function ScannerStatusPanel({
       </View>
     );
   }
-
-  return <CameraInstructions />;
 }
 
 const styles = StyleSheet.create({

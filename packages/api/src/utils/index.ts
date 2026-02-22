@@ -41,7 +41,6 @@ export async function http<TResponse, TBody = unknown>(
     }
   }
 
-  console.log('finalUrl: ', finalUrl);
   const response = await fetch(finalUrl, {
     method,
     headers: {

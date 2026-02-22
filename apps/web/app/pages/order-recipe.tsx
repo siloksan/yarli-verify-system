@@ -1,77 +1,55 @@
 import { Link, useParams } from 'react-router';
-import { useCallback, useEffect, useMemo, useState, type MouseEvent } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type MouseEvent,
+} from 'react';
 import {
   SCANNER_ROUTES,
   ScanResult,
   type IOrderComponentDto,
-  type ScannerCheckParams,
-  type ScannerRoutes,
+  type IScanEvent,
 } from '@repo/api';
 import { useOrder } from '~/features/orders/hooks/orders.hook';
+import { useNativeFeatures } from '~/shared/hooks';
+import { Component } from '~/features/order-recipe/ui/component';
+import { STATUS_STYLES } from '~/features/order-recipe/constants';
 
-type ComponentStatus = 'unchecked' | 'ok' | 'wrong';
+// type NativeScanResultMessage = {
+//   type: 'SCAN_RESULT';
+//   payload: {
+//     scanResult?: ScanResult;
+//     componentId?: string;
+//     scannedBatch?: string;
+//   };
+// };
 
-const statusStyles: Record<
-  ComponentStatus,
-  { badge: string; label: string; dot: string }
-> = {
-  unchecked: {
-    badge: 'bg-gray-100 text-gray-600 border-gray-200',
-    label: 'Не проверено',
-    dot: 'bg-gray-400',
-  },
-  ok: {
-    badge: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-    label: 'Подтверждено',
-    dot: 'bg-emerald-500',
-  },
-  wrong: {
-    badge: 'bg-rose-50 text-rose-700 border-rose-200',
-    label: 'Не совпадает',
-    dot: 'bg-rose-500',
-  },
-};
+// type NativeOpenScannerMessage = {
+//   type: 'OPEN_SCANNER';
+//   payload: ScannerCheckParams & {
+//     route: ScannerRoutes;
+//   };
+// };
 
-type NativeScanResultMessage = {
-  type: 'SCAN_RESULT';
-  payload: {
-    scanResult?: ScanResult;
-    componentId?: string;
-    scannedBatch?: string;
-  };
-};
-
-type NativeOpenScannerMessage = {
-  type: 'OPEN_SCANNER';
-  payload: ScannerCheckParams & {
-    route: ScannerRoutes;
-  };
-};
-
-const isRunningInNativeWebView = () => {
-  const nativeBridge = (
-    window as Window & {
-      ReactNativeWebView?: { postMessage: (message: string) => void };
-    }
-  ).ReactNativeWebView;
-  return typeof nativeBridge?.postMessage === 'function';
-};
-
-const postMessageToNative = (message: NativeOpenScannerMessage) => {
-  (
-    window as Window & {
-      ReactNativeWebView?: { postMessage: (payload: string) => void };
-    }
-  ).ReactNativeWebView?.postMessage(JSON.stringify(message));
-};
+// const postMessageToNative = (message: NativeOpenScannerMessage) => {
+//   (
+//     window as Window & {
+//       ReactNativeWebView?: { postMessage: (payload: string) => void };
+//     }
+//   ).ReactNativeWebView?.postMessage(JSON.stringify(message));
+// };
 
 export default function OrderDetailsPage() {
   const { orderId } = useParams();
+  console.log('orderId: ', orderId);
   const [pendingScan, setPendingScan] = useState<{
     componentId: string;
     batch?: string;
     result: ScanResult;
   } | null>(null);
+
   const [latestScanMessage, setLatestScanMessage] = useState<{
     result: ScanResult;
     componentId: string;
@@ -87,116 +65,121 @@ export default function OrderDetailsPage() {
     [order?.components],
   );
 
-  const applyScanResult = useCallback(
-    (componentId: string, scanResult: ScanResult, batch?: string) => {
-      setPendingScan({
-        componentId,
-        batch,
-        result: scanResult,
-      });
+  // const applyScanResult = useCallback(
+  //   (componentId: string, scanResult: ScanResult, batch?: string) => {
+  //     setPendingScan({
+  //       componentId,
+  //       batch,
+  //       result: scanResult,
+  //     });
 
-      setLatestScanMessage({
-        result: scanResult,
-        componentId,
-        batch,
-      });
+  //     setLatestScanMessage({
+  //       result: scanResult,
+  //       componentId,
+  //       batch,
+  //     });
 
-      refetch();
-    },
-    [refetch],
-  );
+  //     refetch();
+  //   },
+  //   [refetch],
+  // );
 
-  useEffect(() => {
-    const handleNavigation = () => {
-      const url = new URL(window.location.href);
-      const scanResultRaw = url.searchParams.get('scanResult');
-      const componentId = url.searchParams.get('componentId');
-      const scannedBatch = url.searchParams.get('scannedBatch');
-      const scanError = url.searchParams.get('scanError');
+  // useEffect(() => {
+  //   const handleNavigation = () => {
+  //     const url = new URL(window.location.href);
+  //     const scanResultRaw = url.searchParams.get('scanResult');
+  //     const componentId = url.searchParams.get('componentId');
+  //     const scannedBatch = url.searchParams.get('scannedBatch');
+  //     const scanError = url.searchParams.get('scanError');
 
-      const scanResult =
-        scanResultRaw === ScanResult.OK || scanResultRaw === ScanResult.WRONG
-          ? scanResultRaw
-          : null;
+  //     const scanResult =
+  //       scanResultRaw === ScanResult.OK || scanResultRaw === ScanResult.WRONG
+  //         ? scanResultRaw
+  //         : null;
 
-      if (scanResult && componentId) {
-        const batch = scannedBatch ? decodeURIComponent(scannedBatch) : undefined;
-        applyScanResult(componentId, scanResult, batch);
-      }
+  //     if (scanResult && componentId) {
+  //       const batch = scannedBatch
+  //         ? decodeURIComponent(scannedBatch)
+  //         : undefined;
+  //       applyScanResult(componentId, scanResult, batch);
+  //     }
 
-      if (scanError && componentId) {
-        setLatestScanMessage({
-          result: ScanResult.WRONG,
-          componentId,
-        });
-      }
+  //     if (scanError && componentId) {
+  //       setLatestScanMessage({
+  //         result: ScanResult.WRONG,
+  //         componentId,
+  //       });
+  //     }
 
-      url.searchParams.delete('scanResult');
-      url.searchParams.delete('componentId');
-      url.searchParams.delete('scannedBatch');
-      url.searchParams.delete('scannedCode');
-      url.searchParams.delete('scanError');
-      window.history.replaceState({}, '', url.toString());
-    };
+  //     url.searchParams.delete('scanResult');
+  //     url.searchParams.delete('componentId');
+  //     url.searchParams.delete('scannedBatch');
+  //     url.searchParams.delete('scannedCode');
+  //     url.searchParams.delete('scanError');
+  //     window.history.replaceState({}, '', url.toString());
+  //   };
 
-    const handleNativeScanResult = (event: Event) => {
-      const nativeEvent = event as CustomEvent<NativeScanResultMessage>;
-      const payload = nativeEvent.detail?.payload;
-      const scanResult = payload?.scanResult;
-      const componentId = payload?.componentId;
+  //   const handleNativeScanResult = (event: Event) => {
+  //     const nativeEvent = event as CustomEvent<NativeScanResultMessage>;
+  //     const payload = nativeEvent.detail?.payload;
+  //     const scanResult = payload?.scanResult;
+  //     const componentId = payload?.componentId;
 
-      if (
-        !componentId ||
-        !scanResult ||
-        (scanResult !== ScanResult.OK && scanResult !== ScanResult.WRONG)
-      ) {
-        return;
-      }
+  //     if (
+  //       !componentId ||
+  //       !scanResult ||
+  //       (scanResult !== ScanResult.OK && scanResult !== ScanResult.WRONG)
+  //     ) {
+  //       return;
+  //     }
 
-      applyScanResult(componentId, scanResult, payload?.scannedBatch);
-    };
+  //     applyScanResult(componentId, scanResult, payload?.scannedBatch);
+  //   };
 
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        handleNavigation();
-      }
-    };
+  //   const handleVisibilityChange = () => {
+  //     if (document.visibilityState === 'visible') {
+  //       handleNavigation();
+  //     }
+  //   };
 
-    const handlePopState = () => {
-      handleNavigation();
-    };
+  //   const handlePopState = () => {
+  //     handleNavigation();
+  //   };
 
-    handleNavigation();
+  //   handleNavigation();
 
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('popstate', handlePopState);
-    window.addEventListener('native-scan-result', handleNativeScanResult as EventListener);
+  //   document.addEventListener('visibilitychange', handleVisibilityChange);
+  //   window.addEventListener('popstate', handlePopState);
+  //   window.addEventListener(
+  //     'native-scan-result',
+  //     handleNativeScanResult as EventListener,
+  //   );
 
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('popstate', handlePopState);
-      window.removeEventListener(
-        'native-scan-result',
-        handleNativeScanResult as EventListener,
-      );
-    };
-  }, [applyScanResult]);
+  //   return () => {
+  //     document.removeEventListener('visibilitychange', handleVisibilityChange);
+  //     window.removeEventListener('popstate', handlePopState);
+  //     window.removeEventListener(
+  //       'native-scan-result',
+  //       handleNativeScanResult as EventListener,
+  //     );
+  //   };
+  // }, [applyScanResult]);
 
-  const getStatus = (component: IOrderComponentDto): ComponentStatus => {
-    // Use optimistic status if available
-    if (pendingScan?.componentId === component.id) {
-      return pendingScan.result === ScanResult.OK ? 'ok' : 'wrong';
-    }
+  // const getStatus = (component: IOrderComponentDto): ComponentStatus => {
+  //   // Use optimistic status if available
+  //   if (pendingScan?.componentId === component.id) {
+  //     return pendingScan.result === ScanResult.OK ? 'ok' : 'wrong';
+  //   }
 
-    const latestResult = component.scanEvents?.[0]?.result;
-    if (latestResult === ScanResult.OK) return 'ok';
-    if (latestResult === ScanResult.WRONG) return 'wrong';
-    return 'unchecked';
-  };
+  //   const latestResult = component.scanEvents?.[0]?.result;
+  //   if (latestResult === ScanResult.OK) return 'ok';
+  //   if (latestResult === ScanResult.WRONG) return 'wrong';
+  //   return 'unchecked';
+  // };
 
-  const checkedCount = components.filter(
-    (component) => getStatus(component) === 'ok',
-  ).length;
+  // const checkedCount = components.filter(
+  //   (component) => getStatus(component) === 'ok',
+  // ).length;
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 safe-padding">
@@ -222,14 +205,14 @@ export default function OrderDetailsPage() {
                   : `ID ${orderId}`}
               </p>
             </div>
-            <div className="rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-600 shadow-sm">
+            {/* <div className="rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-600 shadow-sm">
               <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
                 Прогресс
               </p>
               <p className="text-lg font-semibold text-gray-900">
                 {checkedCount} / {components.length}
               </p>
-            </div>
+            </div> */}
           </div>
         </header>
 
@@ -253,20 +236,20 @@ export default function OrderDetailsPage() {
         )}
 
         <section className="grid gap-3 rounded-2xl border border-gray-200 bg-white p-4 sm:grid-cols-3">
-          {(['unchecked', 'ok', 'wrong'] as const).map((status) => (
+          {(['UNCHECKED', 'OK', 'WRONG'] as const).map((status) => (
             <div
               key={status}
               className="flex items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2"
             >
               <span
-                className={`h-2.5 w-2.5 rounded-full ${statusStyles[status].dot}`}
+                className={`h-2.5 w-2.5 rounded-full ${STATUS_STYLES[status].dot}`}
               />
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
                   Статус
                 </p>
                 <p className="text-sm font-semibold text-gray-700">
-                  {statusStyles[status].label}
+                  {STATUS_STYLES[status].label}
                 </p>
               </div>
             </div>
@@ -300,8 +283,8 @@ export default function OrderDetailsPage() {
               id: componentId,
               validBatches,
             } = component;
-            const status = getStatus(component);
-            const style = statusStyles[status];
+            // const status = getStatus(component);
+            // const style = statusStyles[status];
             const batches = component.validBatches ?? [];
             const previewBatches = batches.slice(0, 3);
             const remainingCount = batches.length - previewBatches.length;
@@ -321,183 +304,56 @@ export default function OrderDetailsPage() {
               ),
             );
 
-            const checkScannerPayload = generateScannerPayload(
-              orderId,
-              componentId,
-              componentName,
-              SCANNER_ROUTES.scanner_check,
-              validBatches,
-            );
-            const checkScannerLink = generateDeepLink(checkScannerPayload);
+            // const checkScannerPayload = generateScannerPayload(
+            //   orderId,
+            //   componentId,
+            //   componentName,
+            //   SCANNER_ROUTES.scanner_check,
+            //   validBatches,
+            // );
+            // const checkScannerLink = generateDeepLink(checkScannerPayload);
 
-            const checkAndFillScannerPayload = generateScannerPayload(
-              orderId,
-              componentId,
-              componentName,
-              SCANNER_ROUTES.scanner_check_and_fill,
-              validBatches,
-            );
-            const checkAndFillScannerLink = generateDeepLink(
-              checkAndFillScannerPayload,
-            );
+            // const checkAndFillScannerPayload = generateScannerPayload(
+            //   orderId,
+            //   componentId,
+            //   componentName,
+            //   SCANNER_ROUTES.scanner_check_and_fill,
+            //   validBatches,
+            // );
+            // const checkAndFillScannerLink = generateDeepLink(
+            //   checkAndFillScannerPayload,
+            // );
 
-            const handleScannerPress = (
-              event: MouseEvent<HTMLAnchorElement>,
-              scannerPayload: NativeOpenScannerMessage['payload'],
-            ) => {
-              // Store that we're navigating to scanner
-              sessionStorage.setItem('scanning_component', component.id);
+            // const handleScannerPress = (
+            //   event: MouseEvent<HTMLAnchorElement>,
+            //   scannerPayload: NativeOpenScannerMessage['payload'],
+            // ) => {
+            //   // Store that we're navigating to scanner
+            //   sessionStorage.setItem('scanning_component', component.id);
 
-              if (!isRunningInNativeWebView()) {
-                return;
-              }
+            //   if (!isRunningInNativeWebView()) {
+            //     return;
+            //   }
 
-              event.preventDefault();
-              postMessageToNative({
-                type: 'OPEN_SCANNER',
-                payload: scannerPayload,
-              });
-            };
+            //   event.preventDefault();
+            //   postMessageToNative({
+            //     type: 'OPEN_SCANNER',
+            //     payload: scannerPayload,
+            //   });
+            // };
 
             return (
-              <div
-                key={component.id}
-                className={`rounded-2xl border bg-white p-4 shadow-sm transition-all ${
-                  isPending
-                    ? 'border-emerald-500 ring-2 ring-emerald-200'
-                    : 'border-gray-200'
-                }`}
-              >
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="min-w-0">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
-                      Компонент
-                    </p>
-                    <h2 className="text-lg font-semibold text-gray-900">
-                      {component.componentName}
-                      {isPending && (
-                        <span className="ml-2 inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800">
-                          Обновление...
-                        </span>
-                      )}
-                    </h2>
-                    <p className="text-sm text-gray-500">
-                      Требуется: {component.requiredQty} {component.unit ?? ''}
-                    </p>
-                    {isPending && pendingScan?.batch && (
-                      <p
-                        className={`mt-1 text-sm ${
-                          pendingScan.result === ScanResult.OK
-                            ? 'text-emerald-600'
-                            : 'text-rose-600'
-                        }`}
-                      >
-                        {pendingScan.result === ScanResult.OK ? '✓' : '✕'}{' '}
-                        Отсканировано: партия {pendingScan.batch}
-                      </p>
-                    )}
-                  </div>
-
-                  <span
-                    className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold ${style.badge}`}
-                  >
-                    <span className={`h-2 w-2 rounded-full ${style.dot}`} />
-                    {style.label}
-                  </span>
-                </div>
-
-                <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500">
-                    {previewBatches.length === 0 && (
-                      <span className="rounded-full bg-gray-100 px-3 py-1 text-gray-500">
-                        Партии не назначены
-                      </span>
-                    )}
-                    {previewBatches.map((batch) => (
-                      <span
-                        key={batch}
-                        className="rounded-full bg-gray-100 px-3 py-1 text-gray-600"
-                      >
-                        {batch}
-                      </span>
-                    ))}
-                    {remainingCount > 0 && (
-                      <span className="rounded-full bg-gray-100 px-3 py-1 text-gray-600">
-                        +{remainingCount} ещё
-                      </span>
-                    )}
-                  </div>
-
-                  <Link
-                    to={checkScannerLink}
-                    onClick={(event) =>
-                      handleScannerPress(event, checkScannerPayload)
-                    }
-                    className="inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:bg-gray-50"
-                  >
-                    <span className="flex items-center gap-2">
-                      <svg
-                        className="h-4 w-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"
-                        />
-                      </svg>
-                      Сканировать QR
-                    </span>
-                  </Link>
-
-                  <Link
-                    to={checkAndFillScannerLink}
-                    onClick={(event) =>
-                      handleScannerPress(event, checkAndFillScannerPayload)
-                    }
-                    className="inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:bg-gray-50"
-                  >
-                    <span className="flex items-center gap-2">
-                      <svg
-                        className="h-4 w-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"
-                        />
-                      </svg>
-                      Сканировать QR с доливом
-                    </span>
-                  </Link>
-                </div>
-
-                <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
-                  <span className="font-semibold text-gray-500">
-                    Сканированные партии:
-                  </span>
-                  {scannedBatches.length === 0 && (
-                    <span className="rounded-full bg-gray-100 px-3 py-1 text-gray-500">
-                      пока нет
-                    </span>
-                  )}
-                  {scannedBatches.map((batch) => (
-                    <span
-                      key={`${component.id}-${batch}`}
-                      className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700"
-                    >
-                      {batch}
-                    </span>
-                  ))}
-                </div>
-              </div>
+              <Component
+                key={componentId}
+                orderId={orderId}
+                componentId={componentId}
+                componentName={componentName}
+                requiredQty={component.requiredQty}
+                unit={component.unit}
+                status={'UNCHECKED'}
+                validBatches={batches}
+                scanEvents={component.scanEvents ?? []}
+              />
             );
           })}
         </div>
@@ -506,36 +362,36 @@ export default function OrderDetailsPage() {
   );
 }
 
-const generateScannerPayload = (
-  orderId: string,
-  componentId: string,
-  componentName: string,
-  scanRoutes: ScannerRoutes,
-  validBatches: string[] = [],
-) => ({
-  orderId,
-  componentId,
-  componentName,
-  validBatches,
-  callback: `${window.location.origin}/orders/${orderId}`,
-  route: scanRoutes,
-});
+// const generateScannerPayload = (
+//   orderId: string,
+//   componentId: string,
+//   componentName: string,
+//   scanRoutes: ScannerRoutes,
+//   validBatches: string[] = [],
+// ) => ({
+//   orderId,
+//   componentId,
+//   componentName,
+//   validBatches,
+//   callback: `${window.location.origin}/orders/${orderId}`,
+//   route: scanRoutes,
+// });
 
-const generateDeepLink = (
-  scannerPayload: NativeOpenScannerMessage['payload'],
-) => {
-  const rawParams: Omit<ScannerCheckParams, 'validBatches'> = {
-    orderId: scannerPayload.orderId,
-    componentId: scannerPayload.componentId,
-    componentName: scannerPayload.componentName,
-    callback: scannerPayload.callback,
-  };
+// const generateDeepLink = (
+//   scannerPayload: NativeOpenScannerMessage['payload'],
+// ) => {
+//   const rawParams: Omit<ScannerCheckParams, 'validBatches'> = {
+//     orderId: scannerPayload.orderId,
+//     componentId: scannerPayload.componentId,
+//     componentName: scannerPayload.componentName,
+//     callback: scannerPayload.callback,
+//   };
 
-  const params = new URLSearchParams(rawParams);
+//   const params = new URLSearchParams(rawParams);
 
-  if ((scannerPayload.validBatches ?? []).length > 0) {
-    params.set('validBatches', JSON.stringify(scannerPayload.validBatches));
-  }
+//   if ((scannerPayload.validBatches ?? []).length > 0) {
+//     params.set('validBatches', JSON.stringify(scannerPayload.validBatches));
+//   }
 
-  return `scanner:///${scannerPayload.route}?${params.toString()}`;
-};
+//   return `scanner:///${scannerPayload.route}?${params.toString()}`;
+// };
