@@ -1,6 +1,8 @@
 // const BASE_API_URL = 'http://192.168.0.52:3000';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+// const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const API_BASE_URL = 'https://scaling-cod-rq4jw5wvrggcpwqj-3000.app.github.dev';
+console.log(API_BASE_URL)
 
 export const HTTP_METHODS = {
   GET: 'GET',

@@ -7,4 +7,5 @@ export default [
   route('orders/:orderId', 'pages/order-recipe.tsx'),
   route('components', 'pages/components.tsx'),
   route('unsupported', 'pages/unsupported-page.tsx'),
+  route('buckets', 'pages/bucket.tsx'),
 ] satisfies RouteConfig;

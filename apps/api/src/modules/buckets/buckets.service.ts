@@ -3,6 +3,7 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 import { BucketResponseDto, CreateBucketDto } from './dto/create-bucket.dto';
 import { UpdateBucketDto } from './dto/update-bucket.dto';
 import { plainToInstance } from 'class-transformer';
+import { Prisma } from '../../../generated/prisma/client';
 
 @Injectable()
 export class BucketsService {
@@ -30,8 +31,22 @@ export class BucketsService {
     );
   }
 
-  async findAll() {
+  async findAll(search?: string) {
+     const where: Prisma.BucketWhereInput | undefined = search
+          ? {
+              OR: [
+                {
+                  componentName: {
+                    contains: search,
+                    mode: Prisma.QueryMode.insensitive,
+                  },
+                },
+              ],
+            }
+          : undefined;
+
     const buckets = await this.prisma.bucket.findMany({
+      where,
       orderBy: {
         createdAt: 'desc',
       },

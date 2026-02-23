@@ -1,7 +1,8 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
 import { BucketsService } from './buckets.service';
 import { CreateBucketDto } from './dto/create-bucket.dto';
 import { UpdateBucketDto } from './dto/update-bucket.dto';
+import { ApiQuery } from '@nestjs/swagger';
 
 @Controller('buckets')
 export class BucketsController {
@@ -13,10 +14,11 @@ export class BucketsController {
   }
 
   @Get()
-  findAll() {
-    return this.bucketsService.findAll();
+  @ApiQuery({ name: 'q', required: false, type: String })
+  findAll(@Query('q') q?: string) {
+    return this.bucketsService.findAll(q);
   }
-
+    
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.bucketsService.findOne(id);

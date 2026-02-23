@@ -355,17 +355,3 @@ function buildBatchQrPayload(
 function createEan13ImageUrl(ean13: string) {
   return `https://quickchart.io/barcode?type=ean13&width=520&height=180&includeText=false&text=${encodeURIComponent(ean13)}`;
 }
-
-function createEan13FromPayload(payload: string) {
-  const digits = payload.replace(/\D/g, '');
-  const base12 = digits.padEnd(12, '0').slice(0, 12);
-
-  let sum = 0;
-  for (let i = 0; i < base12.length; i += 1) {
-    const value = Number(base12[i]);
-    sum += i % 2 === 0 ? value : value * 3;
-  }
-
-  const checkDigit = (10 - (sum % 10)) % 10;
-  return `${base12}${checkDigit}`;
-}
