@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Body, Param, Delete } from '@nestjs/common';
 import { FillingBucketActsService } from './filling-bucket-acts.service';
-import { CreateFillingBucketActDto } from './dto/create-filling-bucket-act.dto';
+import { CreateFillingBucketActDto, FillingBucketActResponseDto } from './dto/create-filling-bucket-act.dto';
+import { plainToInstance } from 'class-transformer';
 
 @Controller('filling-bucket-acts')
 export class FillingBucketActsController {

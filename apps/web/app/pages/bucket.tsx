@@ -71,6 +71,9 @@ export default function BucketsPage() {
         },
         onError: (error) => {
           console.error('Ошибка при создании:', error);
+          if (error instanceof Error) {
+            setError(error.message)
+          }
           setIsSubmitBtnActive(false);
         },
       });
