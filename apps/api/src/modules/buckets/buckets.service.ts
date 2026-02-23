@@ -1,24 +1,49 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { CreateBucketDto } from './dto/create-bucket.dto';
+import { BucketResponseDto, CreateBucketDto } from './dto/create-bucket.dto';
 import { UpdateBucketDto } from './dto/update-bucket.dto';
+import { plainToInstance } from 'class-transformer';
 
 @Injectable()
 export class BucketsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(createBucketDto: CreateBucketDto) {
-    return this.prisma.bucket.create({
+    const component = await this.prisma.component.findUnique({
+      where: { name: createBucketDto.componentName }
+    });
+  
+    if (!component) {
+      throw new NotFoundException(`Компонент с таким именем: "${createBucketDto.componentName}" не найден`);
+    }
+
+    const bucket = await this.prisma.bucket.create({
       data: createBucketDto,
     });
+
+    return plainToInstance(
+      BucketResponseDto,
+      bucket,
+      {
+        excludeExtraneousValues: true,
+      },
+    );
   }
 
   async findAll() {
-    return this.prisma.bucket.findMany({
+    const buckets = await this.prisma.bucket.findMany({
       orderBy: {
         createdAt: 'desc',
       },
     });
+
+    return plainToInstance(
+      BucketResponseDto,
+      buckets,
+      {
+        excludeExtraneousValues: true,
+      },
+    );
   }
 
   async findOne(id: string) {
@@ -32,27 +57,46 @@ export class BucketsService {
       throw new NotFoundException('Bucket not found');
     }
 
-    return bucket;
+    return plainToInstance(
+      BucketResponseDto,
+      bucket,
+      {
+        excludeExtraneousValues: true,
+      },
+    );
   }
 
   async update(id: string, updateBucketDto: UpdateBucketDto) {
-    await this.findOne(id);
-
-    return this.prisma.bucket.update({
+    const updateBucket = await this.prisma.bucket.update({
       where: {
         id,
       },
       data: updateBucketDto,
     });
+
+    
+    return plainToInstance(
+      BucketResponseDto,
+      updateBucket,
+      {
+        excludeExtraneousValues: true,
+      },
+    );
   }
 
   async remove(id: string) {
-    await this.findOne(id);
-
-    return this.prisma.bucket.delete({
+    const deletedBucket = await this.prisma.bucket.delete({
       where: {
         id,
       },
     });
+
+    return plainToInstance(
+      BucketResponseDto,
+      deletedBucket,
+      {
+        excludeExtraneousValues: true,
+      },
+    );
   }
 }

@@ -1,5 +1,5 @@
-export * from './bucket.dto';
-export * from './filling-bucket-act.dto';
+export * from './bucket.dto.js';
+export * from './filling-bucket-act.dto.js';
 
 export enum OrderStatus {
   OPEN = 'OPEN',
