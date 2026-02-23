@@ -1,14 +1,21 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import type { IBucketCreateDto } from '@repo/api';
 import { useAllBuckets, useCreateBucket } from '~/features/bucket';
 import { useAllComponents } from '~/features/components';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 
-const FORM_ELEMENTS_NAME ={
+const FORM_ELEMENTS_NAME = {
   component: 'component',
   creator: 'creator',
   location: 'location'
+}
+
+interface BucketQRData {
+  id: string,
+  componentName: string;
+  creator: string;
+  location?: string;
 }
 
 export default function BucketsPage() {
@@ -18,6 +25,10 @@ export default function BucketsPage() {
   // Search state
   const [searchTerm, setSearchTerm] = useState('');
   const [searchField, setSearchField] = useState<'all' | 'component' | 'location'>('all');
+  // QR state
+  const [selectedBucket, setSelectedBucket] = useState<BucketQRData | null>(null);
+  const [showQRModal, setShowQRModal] = useState(false);
+  const qrPrintRef = useRef<HTMLDivElement>(null);
 
   const {
     data: buckets = [],
@@ -33,43 +44,40 @@ export default function BucketsPage() {
 
   const createBucketMutation = useCreateBucket();
   
-const handleSubmit = (e: React.SubmitEvent<HTMLFormElement>) => {
-  e.preventDefault();
-  const form = e.currentTarget;
-  const formData = new FormData(form);
-  
-  // Получаем значения и приводим к нужному типу
-  const componentName = formData.get(FORM_ELEMENTS_NAME.component) as string | null;
-  const creator = formData.get(FORM_ELEMENTS_NAME.creator) as string | null;
-  const location = formData.get(FORM_ELEMENTS_NAME.location) as string | null;
-  
-  // Проверяем, что обязательные поля не пустые
-  if (componentName && creator) {
-    setIsSubmitBtnActive(true);
+  const handleSubmit = (e: React.SubmitEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const form = e.currentTarget;
+    const formData = new FormData(form);
     
-    const createBucketData: IBucketCreateDto = {
-      componentName: componentName.trim(),
-      creator: creator.trim(),
-      ...(location && location.trim() ? { location: location.trim() } : {})
-    };
+    const componentName = formData.get(FORM_ELEMENTS_NAME.component) as string | null;
+    const creator = formData.get(FORM_ELEMENTS_NAME.creator) as string | null;
+    const location = formData.get(FORM_ELEMENTS_NAME.location) as string | null;
     
-    createBucketMutation.mutate(createBucketData, {
-      onSuccess: () => {
-        // Очистить форму, показать уведомление
-        console.log('Тара успешно создана');
-        form.reset(); // Очищаем форму после успеха
-      },
-      onError: (error) => {
-        // Показать ошибку
-        console.error('Ошибка при создании:', error);
-        setIsSubmitBtnActive(false);
-      },
-    });
-  } else {
-    // Обработка ошибки валидации
-    console.error('Пожалуйста, заполните обязательные поля');
-  }
-};
+    if (componentName && creator) {
+      setIsSubmitBtnActive(true);
+      
+      const createBucketData: IBucketCreateDto = {
+        componentName: componentName.trim(),
+        creator: creator.trim(),
+        ...(location && location.trim() ? { location: location.trim() } : {})
+      };
+      
+      createBucketMutation.mutate(createBucketData, {
+        onSuccess: () => {
+          console.log('Тара успешно создана');
+          form.reset();
+          setIsSubmitBtnActive(false);
+          setIsFormOpen(false);
+        },
+        onError: (error) => {
+          console.error('Ошибка при создании:', error);
+          setIsSubmitBtnActive(false);
+        },
+      });
+    } else {
+      console.error('Пожалуйста, заполните обязательные поля');
+    }
+  };
 
   // Filter buckets based on search
   const filteredBuckets = useMemo(() => {
@@ -109,6 +117,162 @@ const handleSubmit = (e: React.SubmitEvent<HTMLFormElement>) => {
     if (daysOld < 7) return `${daysOld} дн.`;
     if (daysOld < 30) return `${daysOld} дн.`;
     return `${Math.floor(daysOld / 30)} мес.`;
+  };
+
+  const handleShowQR = (bucket: BucketQRData) => {
+    setSelectedBucket(bucket);
+    setShowQRModal(true);
+  };
+
+  const handlePrintQR = () => {
+    if (!qrPrintRef.current || !selectedBucket) return;
+    
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      alert('Пожалуйста, разрешите всплывающие окна для печати');
+      return;
+    }
+
+    const qrData = JSON.stringify({
+      id: selectedBucket.id,
+      component: selectedBucket.componentName,
+      creator: selectedBucket.creator,
+      location: selectedBucket.location || '',
+      date: new Date().toISOString()
+    });
+
+    const qrImageUrl = createQrImageUrl(qrData);
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Печать QR-кода - ${selectedBucket.componentName}</title>
+          <style>
+            body {
+              font-family: Arial, sans-serif;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              min-height: 100vh;
+              margin: 0;
+              padding: 20px;
+              background: white;
+            }
+            .qr-container {
+              text-align: center;
+              padding: 30px;
+              border: 2px solid #e5e7eb;
+              border-radius: 12px;
+              max-width: 400px;
+              background: white;
+            }
+            .qr-image {
+              width: 300px;
+              height: 300px;
+              margin: 0 auto 20px;
+            }
+            .qr-image img {
+              width: 100%;
+              height: 100%;
+              object-fit: contain;
+            }
+            .qr-title {
+              font-size: 20px;
+              font-weight: bold;
+              margin-bottom: 8px;
+              color: #111827;
+            }
+            .qr-subtitle {
+              font-size: 14px;
+              color: #6b7280;
+              margin-bottom: 16px;
+            }
+            .qr-info {
+              text-align: left;
+              background: #f9fafb;
+              padding: 16px;
+              border-radius: 8px;
+              margin: 16px 0;
+            }
+            .qr-info-item {
+              display: flex;
+              margin-bottom: 8px;
+              font-size: 14px;
+            }
+            .qr-info-label {
+              width: 100px;
+              color: #6b7280;
+            }
+            .qr-info-value {
+              color: #111827;
+              font-weight: 500;
+            }
+            .qr-footer {
+              font-size: 12px;
+              color: #9ca3af;
+              margin-top: 16px;
+            }
+            @media print {
+              body {
+                padding: 0;
+              }
+              .qr-container {
+                border: none;
+                box-shadow: none;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="qr-container">
+            <div class="qr-image">
+              <img src="${qrImageUrl}" alt="QR Code для ${selectedBucket.componentName}" />
+            </div>
+            <div class="qr-title">${selectedBucket.componentName}</div>
+            <div class="qr-subtitle">ID: ${selectedBucket.id.slice(0, 8)}...</div>
+            
+            <div class="qr-info">
+              <div class="qr-info-item">
+                <span class="qr-info-label">Компонент:</span>
+                <span class="qr-info-value">${selectedBucket.componentName}</span>
+              </div>
+              <div class="qr-info-item">
+                <span class="qr-info-label">Создатель:</span>
+                <span class="qr-info-value">${selectedBucket.creator}</span>
+              </div>
+              ${selectedBucket.location ? `
+              <div class="qr-info-item">
+                <span class="qr-info-label">Расположение:</span>
+                <span class="qr-info-value">${selectedBucket.location}</span>
+              </div>
+              ` : ''}
+              <div class="qr-info-item">
+                <span class="qr-info-label">Дата:</span>
+                <span class="qr-info-value">${format(new Date(), 'dd.MM.yyyy')}</span>
+              </div>
+            </div>
+            
+            <div class="qr-footer">
+              Сканируйте QR-код для получения информации о таре
+            </div>
+          </div>
+          <script>
+            window.onload = () => {
+              setTimeout(() => {
+                window.print();
+              }, 500);
+            };
+          </script>
+        </body>
+      </html>
+    `);
+    
+    printWindow.document.close();
+  };
+
+  const createQrImageUrl = (qrData: string) => {
+    return `https://quickchart.io/qr?text=${encodeURIComponent(qrData)}&size=520&margin=1&dark=000000&light=ffffff`;
   };
 
   return (
@@ -188,10 +352,10 @@ const handleSubmit = (e: React.SubmitEvent<HTMLFormElement>) => {
               <div className="flex items-end gap-2">
                 <button
                   type="submit"
-                  disabled={isSubmitBtnActive && componentsLoading}
+                  disabled={isSubmitBtnActive}
                   className="flex-1 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:bg-gray-400"
                 >
-                  Создать
+                  {isSubmitBtnActive ? 'Создание...' : 'Создать'}
                 </button>
                 <button
                   type="button"
@@ -360,6 +524,9 @@ const handleSubmit = (e: React.SubmitEvent<HTMLFormElement>) => {
                     <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
                       Статус
                     </th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                      Действия
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 bg-white">
@@ -398,6 +565,23 @@ const handleSubmit = (e: React.SubmitEvent<HTMLFormElement>) => {
                           {getStatusText(bucket.createdAt)}
                         </span>
                       </td>
+                      <td className="whitespace-nowrap px-6 py-4">
+                        <button
+                          onClick={() => handleShowQR({
+                            id: bucket.id,
+                            componentName: bucket.componentName,
+                            creator: bucket.creator,
+                            location: bucket.location
+                          })}
+                          className="inline-flex items-center gap-1 rounded-lg bg-purple-50 px-3 py-1.5 text-xs font-medium text-purple-700 transition hover:bg-purple-100"
+                          title="Показать QR-код"
+                        >
+                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+                          </svg>
+                          QR
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -409,7 +593,7 @@ const handleSubmit = (e: React.SubmitEvent<HTMLFormElement>) => {
               {filteredBuckets.map((bucket) => (
                 <div key={bucket.id} className="p-4 hover:bg-gray-50">
                   <div className="flex items-start justify-between">
-                    <div className="space-y-2">
+                    <div className="space-y-2 flex-1">
                       <p className="text-sm font-medium text-gray-900">
                         {bucket.componentName}
                       </p>
@@ -437,9 +621,25 @@ const handleSubmit = (e: React.SubmitEvent<HTMLFormElement>) => {
                         </p>
                       </div>
                     </div>
-                    <span className={`rounded-full px-2 py-1 text-xs font-semibold ${getStatusColor(bucket.createdAt)}`}>
-                      {getStatusText(bucket.createdAt)}
-                    </span>
+                    <div className="flex flex-col items-end gap-2">
+                      <span className={`rounded-full px-2 py-1 text-xs font-semibold ${getStatusColor(bucket.createdAt)}`}>
+                        {getStatusText(bucket.createdAt)}
+                      </span>
+                      <button
+                        onClick={() => handleShowQR({
+                          id: bucket.id,
+                          componentName: bucket.componentName,
+                          creator: bucket.creator,
+                          location: bucket.location
+                        })}
+                        className="inline-flex items-center gap-1 rounded-lg bg-purple-50 px-2 py-1 text-xs font-medium text-purple-700 transition hover:bg-purple-100"
+                      >
+                        <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+                        </svg>
+                        QR
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -447,6 +647,87 @@ const handleSubmit = (e: React.SubmitEvent<HTMLFormElement>) => {
           </div>
         )}
       </div>
+
+      {/* QR Code Modal */}
+      {showQRModal && selectedBucket && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+          <div ref={qrPrintRef} className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-900">
+                QR-код для тары
+              </h3>
+              <button
+                onClick={() => setShowQRModal(false)}
+                className="rounded-lg p-1 hover:bg-gray-100"
+              >
+                <svg className="h-5 w-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="flex flex-col items-center">
+              {/* QR Code Image */}
+              <div className="mb-4 rounded-lg border border-gray-200 bg-white p-4">
+                <img
+                  src={createQrImageUrl(JSON.stringify({
+                    id: selectedBucket.id,
+                    component: selectedBucket.componentName,
+                    creator: selectedBucket.creator,
+                    location: selectedBucket.location || '',
+                    date: new Date().toISOString()
+                  }))}
+                  alt={`QR код для ${selectedBucket.componentName}`}
+                  className="h-64 w-64"
+                />
+              </div>
+
+              {/* Bucket Info */}
+              <div className="mb-6 w-full space-y-2 rounded-lg bg-gray-50 p-4">
+                <p className="text-sm text-gray-600">
+                  <span className="font-medium">Компонент:</span> {selectedBucket.componentName}
+                </p>
+                <p className="text-sm text-gray-600">
+                  <span className="font-medium">Создатель:</span> {selectedBucket.creator}
+                </p>
+                {selectedBucket.location && (
+                  <p className="text-sm text-gray-600">
+                    <span className="font-medium">Расположение:</span> {selectedBucket.location}
+                  </p>
+                )}
+                <p className="text-sm text-gray-600">
+                  <span className="font-medium">ID:</span> {selectedBucket.id.slice(0, 8)}...
+                </p>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex w-full gap-3">
+                <button
+                  onClick={handlePrintQR}
+                  className="flex-1 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
+                >
+                  <span className="flex items-center justify-center gap-2">
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                    </svg>
+                    Печать
+                  </span>
+                </button>
+                <button
+                  onClick={() => setShowQRModal(false)}
+                  className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
+                >
+                  Закрыть
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
+}
+
+export function createQrImageUrl(qrData: string) {
+  return `https://quickchart.io/qr?text=${encodeURIComponent(qrData)}&size=520&margin=1&dark=000000&light=ffffff`;
 }
