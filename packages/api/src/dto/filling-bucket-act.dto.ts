@@ -1,4 +1,4 @@
-export interface ICreatFillingActBucketDto {
+export interface ICreateFillingActBucketDto {
   batchId: string;
   componentId: string;
   workerName: string;

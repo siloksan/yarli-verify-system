@@ -1,9 +1,12 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ICreatFillingActBucketDto, IFillingActBucketResponseDto } from '@repo/api';
+import {
+  ICreateFillingActBucketDto,
+  IFillingActBucketResponseDto,
+} from '@repo/api';
 import { Expose } from 'class-transformer';
-import { IsDateString, IsOptional, IsString } from 'class-validator';
+import { IsDateString, IsDecimal, IsOptional, IsString } from 'class-validator';
 
-export class CreateFillingBucketActDto implements ICreatFillingActBucketDto {
+export class CreateFillingBucketActDto implements ICreateFillingActBucketDto {
   @ApiProperty()
   @IsString()
   componentId: string;
@@ -22,16 +25,14 @@ export class CreateFillingBucketActDto implements ICreatFillingActBucketDto {
 
   @ApiPropertyOptional({
     nullable: true,
-    type: String
+    type: String,
   })
   @IsOptional()
-  @IsString()
-  @Expose()
+  @IsDecimal()
   weight: string | null;
 
   @ApiProperty()
   @IsString()
-  @Expose()
   bucketId: string;
 }
 
@@ -58,7 +59,7 @@ export class FillingBucketActResponseDto implements IFillingActBucketResponseDto
 
   @ApiPropertyOptional({
     nullable: true,
-    type: String
+    type: String,
   })
   @IsOptional()
   @IsString()
@@ -83,9 +84,9 @@ export class FillingBucketActResponseDto implements IFillingActBucketResponseDto
   @ApiProperty({
     description: 'Creation date in ISO 8601 format',
     example: '2024-01-15T10:30:00.000Z',
-    type: String
+    type: String,
   })
   @IsDateString()
   @Expose()
-  createdAt: string; 
+  createdAt: string;
 }

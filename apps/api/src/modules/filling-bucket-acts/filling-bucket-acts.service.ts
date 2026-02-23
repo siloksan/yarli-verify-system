@@ -1,6 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { CreateFillingBucketActDto, FillingBucketActResponseDto } from './dto/create-filling-bucket-act.dto';
+import {
+  CreateFillingBucketActDto,
+  FillingBucketActResponseDto,
+} from './dto/create-filling-bucket-act.dto';
 import { plainToInstance } from 'class-transformer';
 
 @Injectable()
@@ -8,6 +11,7 @@ export class FillingBucketActsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(createFillingBucketActDto: CreateFillingBucketActDto) {
+    console.log('createFillingBucketActDto: ', createFillingBucketActDto);
     // TODO check componentId,  bucketId, orderId, componentBatch exist
     //throw error if doesn't
 
