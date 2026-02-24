@@ -18,6 +18,11 @@ export class FillingBucketActsController {
     return this.fillingBucketActsService.findAll();
   }
 
+  @Get('bucket/:bucketId')
+  findByBucketId(@Param('bucketId') bucketId: string) {
+    return this.fillingBucketActsService.findByBucketId(bucketId);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.fillingBucketActsService.findOne(id);

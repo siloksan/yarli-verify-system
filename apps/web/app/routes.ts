@@ -8,4 +8,5 @@ export default [
   route('components', 'pages/components.tsx'),
   route('unsupported', 'pages/unsupported-page.tsx'),
   route('buckets', 'pages/bucket.tsx'),
+  route('filling-bucket-acts', 'pages/filling-bucket-acts.tsx'),
 ] satisfies RouteConfig;

@@ -19,7 +19,9 @@ export default function MainPage() {
             <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
               Страница
             </p>
-            <p className="mt-1 text-lg font-semibold text-gray-900">Открытые заказы на производство</p>
+            <p className="mt-1 text-lg font-semibold text-gray-900">
+              Открытые заказы на производство
+            </p>
           </Link>
 
           <Link
@@ -29,7 +31,9 @@ export default function MainPage() {
             <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
               Страница
             </p>
-            <p className="mt-1 text-lg font-semibold text-gray-900">Закрытые заказы на производство</p>
+            <p className="mt-1 text-lg font-semibold text-gray-900">
+              Закрытые заказы на производство
+            </p>
           </Link>
 
           <Link
@@ -52,6 +56,17 @@ export default function MainPage() {
             </p>
             <p className="mt-1 text-lg font-semibold text-gray-900">
               Расходные ёмкости
+            </p>
+          </Link>
+          <Link
+            to="/filling-bucket-acts"
+            className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition hover:border-gray-300 hover:bg-gray-50"
+          >
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+              Страница
+            </p>
+            <p className="mt-1 text-lg font-semibold text-gray-900">
+              Акты наполнения ёмкостей
             </p>
           </Link>
         </div>
