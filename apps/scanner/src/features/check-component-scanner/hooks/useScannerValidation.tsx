@@ -1,9 +1,9 @@
 import { useCallback, useRef, useState } from 'react';
 
 import { useModal } from '@/src/shared/modal';
-import { validateCode } from '../api';
 import { useScannerSessionStore } from '@/src/shared/stores';
 import { ScannerState } from '../types';
+import { validateCode } from '../api/validate-code';
 
 export function useScannerValidation(
   renderModalContent: (state: ScannerState) => React.ReactNode,

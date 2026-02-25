@@ -67,24 +67,6 @@ export function CheckComponent() {
     return <CameraUnavailable requestPermission={requestPermission} />;
   }
 
-  // if (state.status === 'success' && request) {
-  //   if (!sentResultRef.current) {
-  //     sendResultToWeb({
-  //       type: 'SCAN_RESULT',
-  //       payload: {
-  //         scanResult: state.result.scanResult,
-  //         scannedComponentName: state.result.scannedComponentName,
-  //         scannedComponentBatch: state.result.scannedComponentBatch,
-  //       },
-  //     });
-  //     sentResultRef.current = true;
-  //   }
-
-  //   if (state.result.scanResult === ScanResult.OK) {
-  //     return <Redirect href={{ pathname: '/order-recipe' }} />;
-  //   }
-  // }
-
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#000000" />

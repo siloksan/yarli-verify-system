@@ -1,8 +1,9 @@
 import { Controller, Get, Post, Body, Param, Delete } from '@nestjs/common';
 import { FillingBucketActsService } from './filling-bucket-acts.service';
 import { CreateFillingBucketActDto } from './dto/create-filling-bucket-act.dto';
+import { API_ROUTES } from '@repo/api';
 
-@Controller('filling-bucket-acts')
+@Controller(API_ROUTES.filling_act_buckets)
 export class FillingBucketActsController {
   constructor(
     private readonly fillingBucketActsService: FillingBucketActsService,

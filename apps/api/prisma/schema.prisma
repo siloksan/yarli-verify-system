@@ -21,11 +21,12 @@ enum ScanResult {
 model Component {
   id               String             @id @default(uuid())
   name             String             @unique
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
   recipeComponents RecipeComponent[]
   batches          ComponentBatch[]
   fillingActs      FillingActBucket[]
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
+  buckets          Bucket[]
 }
 
 model ProductionOrder {
@@ -103,24 +104,26 @@ model ScanEvent {
 
 model Bucket {
   id            String             @id @default(uuid())
-  componentName String
+  componentId   String
   creator       String
   location      String?
   createdAt     DateTime           @default(now())
   updatedAt     DateTime           @updatedAt
   fillingActs   FillingActBucket[]
+  component     Component          @relation(fields: [componentId], references: [id], onDelete: Cascade)
 }
 
 model FillingActBucket {
-  id            String   @id @default(uuid())
-  workerName    String
-  weight        Decimal?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  batchId       String
-  bucketId      String
-  componentId   String
-  orderId       String
+  id              String   @id @default(uuid())
+  workerName      String
+  weight          Decimal?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  batchId         String
+  bucketId        String
+  componentId     String
+  orderId         String
+  validBatchesId  String[]
 
   batch     ComponentBatch  @relation(fields: [batchId], references: [id], onDelete: Cascade)
   bucket    Bucket          @relation(fields: [bucketId], references: [id], onDelete: Cascade)

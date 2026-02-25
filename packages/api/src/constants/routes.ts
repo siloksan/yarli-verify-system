@@ -11,4 +11,5 @@ export const API_ROUTES = {
   components: 'components',
   orders: 'orders',
   scan_events: 'scan-events',
+  filling_act_buckets: 'filling-act-buckets',
 } as const;

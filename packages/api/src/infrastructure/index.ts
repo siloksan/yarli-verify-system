@@ -1,3 +1,7 @@
+import { HttpError } from './http-error';
+
+export { HttpError } from './http-error.js';
+
 export const HTTP_METHODS = {
   GET: 'GET',
   POST: 'POST',
@@ -50,14 +54,41 @@ export async function http<TResponse, TBody = unknown>(
     body: body ? JSON.stringify(body) : undefined,
   });
 
-  if (!response.ok) {
-    const message = await response.text();
-    throw new Error(message || `HTTP error ${response.status}`);
+  let parsedBody: unknown = null;
+
+  try {
+    parsedBody = await response.json();
+  } catch {
+    parsedBody = await response.text();
   }
 
-  return response.json();
+  if (!response.ok) {
+    let message = 'Неизвестная ошибка';
+
+    if (isHttpErrorBody(parsedBody)) {
+      if (Array.isArray(parsedBody.message)) {
+        message = parsedBody.message.join(', ');
+      } else if (typeof parsedBody.message === 'string') {
+        message = parsedBody.message;
+      }
+    }
+
+    throw new HttpError(response.status, message, parsedBody);
+  }
+
+  return parsedBody as TResponse;
 }
 
+/**
+ * Creates a function that makes HTTP requests to the given base URL.
+ *
+ * @param {string} baseUrl - The base URL for the HTTP requests.
+ *
+ * @returns {(endpoint?: string, options?: RequestOptions<TBody>) => Promise<TResponse>} -
+ *   A function that makes an HTTP request to the given endpoint with the given options.
+ *   The function returns a promise that resolves to the response data.
+ *   If the response status is not OK, the promise is rejected with an error that includes the response status and text.
+ */
 export const createHttp =
   (baseUrl: string) =>
   <TResponse, TBody = unknown>(
@@ -65,3 +96,16 @@ export const createHttp =
     options?: RequestOptions<TBody>,
   ) =>
     http<TResponse, TBody>(baseUrl, endpoint, options);
+
+export interface DefaultHttpErrorBody {
+  statusCode?: number;
+  message?: string | string[];
+  error?: string;
+}
+function isHttpErrorBody(value: unknown): value is DefaultHttpErrorBody {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+
+  return 'message' in value || 'statusCode' in value || 'error' in value;
+}

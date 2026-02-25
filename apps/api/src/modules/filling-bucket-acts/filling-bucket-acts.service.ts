@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+﻿import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import {
   CreateFillingBucketActDto,
@@ -11,8 +11,45 @@ export class FillingBucketActsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(createFillingBucketActDto: CreateFillingBucketActDto) {
+    const { componentName, componentBarcode, validBatchesId, ...createData } =
+      createFillingBucketActDto;
+
+    const batch = await this.prisma.componentBatch.findUnique({
+      where: {
+        barcode: componentBarcode,
+      },
+      select: {
+        id: true,
+        batchNumber: true,
+        component: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    if (!batch) {
+      throw new NotFoundException('Компонент не найден в системе');
+    }
+
+    if (batch.component.id !== createData.componentId) {
+      throw new NotFoundException(
+        `Сканирован ${batch.component.name}, ожидался ${componentName}`,
+      );
+    }
+
+    if (validBatchesId.length > 0 && !validBatchesId.includes(batch.id)) {
+      throw new NotFoundException(
+        `Сканирована неразрешённая партия ${batch.batchNumber}`,
+      );
+    }
     const createdAct = await this.prisma.fillingActBucket.create({
-      data: createFillingBucketActDto,
+      data: {
+        ...createData,
+        batchId: batch.id,
+      },
     });
 
     return plainToInstance(FillingBucketActResponseDto, createdAct, {

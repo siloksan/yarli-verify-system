@@ -4,21 +4,15 @@ import {
   IFillingActBucketResponseDto,
 } from '@repo/api';
 import { Expose } from 'class-transformer';
-import { IsDateString, IsDecimal, IsOptional, IsString } from 'class-validator';
+import {
+  IsArray,
+  IsDateString,
+  IsDecimal,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 
 export class CreateFillingBucketActDto implements ICreateFillingActBucketDto {
-  @ApiProperty()
-  @IsString()
-  componentId: string;
-
-  @ApiProperty()
-  @IsString()
-  batchId: string;
-
-  @ApiProperty()
-  @IsString()
-  orderId: string;
-
   @ApiProperty()
   @IsString()
   workerName: string;
@@ -34,6 +28,29 @@ export class CreateFillingBucketActDto implements ICreateFillingActBucketDto {
   @ApiProperty()
   @IsString()
   bucketId: string;
+
+  @ApiProperty()
+  @IsString()
+  orderId: string;
+
+  @ApiProperty({
+    type: [String],
+  })
+  @IsArray()
+  @IsString({ each: true })
+  validBatchesId: ICreateFillingActBucketDto['validBatchesId'];
+
+  @ApiProperty()
+  @IsString()
+  componentBarcode: string;
+
+  @ApiProperty()
+  @IsString()
+  componentId: string;
+
+  @ApiProperty()
+  @IsString()
+  componentName: string;
 }
 
 export class FillingBucketActResponseDto implements IFillingActBucketResponseDto {

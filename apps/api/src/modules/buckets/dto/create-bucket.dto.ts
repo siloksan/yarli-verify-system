@@ -30,6 +30,11 @@ export class BucketResponseDto implements IBucketResponseDto {
   @ApiProperty()
   @IsString()
   @Expose()
+  componentId: string;
+
+  @ApiProperty()
+  @IsString()
+  @Expose()
   componentName: string;
 
   @ApiProperty()
@@ -40,20 +45,20 @@ export class BucketResponseDto implements IBucketResponseDto {
   @ApiProperty({
     description: 'Creation date in ISO 8601 format',
     example: '2024-01-15T10:30:00.000Z',
-    type: String
+    type: String,
   })
   @IsDateString()
   @Expose()
-  createdAt: string; 
+  createdAt: string;
 
   @ApiProperty({
     description: 'Date of update in ISO 8601 format',
     example: '2024-01-15T10:30:00.000Z',
-    type: String
+    type: String,
   })
   @IsDateString()
   @Expose()
-  updatedAt: string; 
+  updatedAt: string;
 
   @ApiPropertyOptional()
   @IsOptional()

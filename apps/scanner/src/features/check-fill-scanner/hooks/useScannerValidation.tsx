@@ -1,9 +1,8 @@
 import { useCallback, useRef, useState } from 'react';
 
 import { useModal } from '@/src/shared/modal';
-import { validateCode } from '../api';
+import { createFillingAct } from '../api';
 import { useScannerSessionStore } from '@/src/shared/stores';
-import { ScannerState } from '../types';
 
 export function useScannerValidation(
   renderModalContent: (state: ScannerState) => React.ReactNode,
@@ -62,7 +61,7 @@ export function useScannerValidation(
       setStateAndUpdateModal({ status: 'validating', data: event.data });
 
       try {
-        const result = await validateCode({
+        const result = await createFillingAct({
           scannedCode: event.data,
           orderId,
           componentId,

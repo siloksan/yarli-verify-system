@@ -3,9 +3,9 @@ import { Text, View, StyleSheet } from 'react-native';
 export function ScannerHeader() {
   return (
     <View style={styles.header}>
-      <Text style={styles.headerTitle}>Barcode Scanning</Text>
+      <Text style={styles.headerTitle}>Сканируйте код компонента</Text>
       <Text style={styles.headerSubtitle}>
-        Point your camera at the component barcode
+        Наведите камеру на код, чтобы отсканировать компонент.
       </Text>
     </View>
   );

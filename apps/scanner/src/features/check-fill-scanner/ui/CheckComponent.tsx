@@ -1,13 +1,11 @@
 import { useCameraPermissions } from 'expo-camera';
 import { Redirect, useRouter } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   View,
   StyleSheet,
   Dimensions,
   StatusBar,
-  Pressable,
-  Text,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -15,27 +13,24 @@ import {
   useScannerSessionStore,
   useWebViewBridgeStore,
 } from '@/src/shared/stores';
-import { AppToWebMessage } from '@repo/api';
-import { useScannerValidation } from '../hooks';
+import { AppToWebMessage, ICreateFillingActBucketDto } from '@repo/api';
 import { CameraPermission } from './CameraPermission';
 import { CameraUnavailable } from './CameraUnavailable';
 import { ScannerHeader } from './ScannerHeader';
 import { ScannerCamera } from './ScannerCamera';
 import { ScannerOverlay } from './ScannerOverlay';
-import { ScannerState } from '../types';
-import { ScannerModalChildren } from './ScannerModalChildren';
-import { useModal } from '@/src/shared/modal/modal.context';
+import { useFillingStore } from '../model/store/filling.store';
 
 const { width } = Dimensions.get('window');
 const SCANNER_SIZE = width * 0.8;
+type HandleScan = (event: { data: string }) => void;
 
-export function CheckComponent() {
+export function FillingBucketActComponent() {
   const [torch, setTorch] = useState(false);
   const [permission, requestPermission] = useCameraPermissions();
-  const router = useRouter();
+  const lockRef = useRef(false);
   const webViewRef = useWebViewBridgeStore((s) => s.webViewRef);
   const request = useScannerSessionStore((s) => s.request);
-  const { hideModal } = useModal();
 
   const sendResultToWeb = (response: AppToWebMessage) => {
     if (!webViewRef) return;
@@ -43,21 +38,18 @@ export function CheckComponent() {
     webViewRef.postMessage(JSON.stringify(response));
   };
 
-  const { state, handleScan, reset, showInstruction } = useScannerValidation(
-    (state: ScannerState) => (
-      <ScannerModalChildren
-        state={state}
-        scanData={state.status === 'idle' ? null : state.data}
-        validationResult={state.status === 'success' ? state.result : null}
-        hideModal={hideModal}
-        validationError={state.status === 'error' ? state.message : null}
-      />
-    ),
+  const state = useFillingStore((store) => store.state);
+  const scanBucket = useFillingStore((store) => store.scanBucket);
+  const startBucketValidation = useFillingStore(
+    (store) => store.startBucketValidation,
+  );
+  const startComponentValidation = useFillingStore(
+    (store) => store.startComponentValidation,
   );
 
-  const handleReset = () => {
-    reset();
-  };
+  // const handleReset = () => {
+  //   reset();
+  // };
 
   if (!permission) {
     return <CameraPermission />;
@@ -67,23 +59,36 @@ export function CheckComponent() {
     return <CameraUnavailable requestPermission={requestPermission} />;
   }
 
-  // if (state.status === 'success' && request) {
-  //   if (!sentResultRef.current) {
-  //     sendResultToWeb({
-  //       type: 'SCAN_RESULT',
-  //       payload: {
-  //         scanResult: state.result.scanResult,
-  //         scannedComponentName: state.result.scannedComponentName,
-  //         scannedComponentBatch: state.result.scannedComponentBatch,
-  //       },
-  //     });
-  //     sentResultRef.current = true;
-  //   }
+  if (request == null) {
+    return null;
+  }
 
-  //   if (state.result.scanResult === ScanResult.OK) {
-  //     return <Redirect href={{ pathname: '/order-recipe' }} />;
-  //   }
-  // }
+  const handleScan: HandleScan = async ({ data }) => {
+    if (lockRef.current) return;
+    lockRef.current = true;
+
+    if (state.step === 'scan_bucket') {
+      startBucketValidation({
+        bucketCode: data,
+        testedComponentName: request.componentName,
+      });
+      scanBucket(data);
+    }
+
+    if (state.step === 'bucket_completed') {
+      const createScanEventData: ICreateFillingActBucketDto = {
+        bucketId: state.bucket.id,
+        orderId: request.orderId,
+        validBatchesId: request.validBatches,
+        componentId: request.componentId,
+        componentName: request.componentName,
+        componentBarcode: data,
+        workerName: 'Иван Иванович Иванов',
+        weight: null,
+      };
+      startComponentValidation(createScanEventData, state.bucket);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -105,7 +110,7 @@ export function CheckComponent() {
         />
       </View>
 
-      <View style={styles.instructions}>
+      {/* <View style={styles.instructions}>
         <View style={styles.targetInfoCard}>
           <Text style={styles.targetInfoTitle}>Component to validate</Text>
           <Text style={styles.targetInfoText}>
@@ -127,7 +132,7 @@ export function CheckComponent() {
             <Text style={styles.resetButtonText}>Сканировать заново</Text>
           </Pressable>
         )}
-      </View>
+      </View> */}
     </SafeAreaView>
   );
 }

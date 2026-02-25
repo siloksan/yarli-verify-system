@@ -6,6 +6,7 @@ export interface IBucketCreateDto {
 
 export interface IBucketResponseDto {
   id: string;
+  componentId: string;
   componentName: string;
   creator: string;
   location?: string;
