@@ -32,6 +32,7 @@ export default function BucketsPage() {
     isLoading: bucketsLoading,
     isError: bucketsError,
   } = useAllBuckets();
+  console.log('buckets: ', buckets);
 
   const {
     data: components = [],
@@ -46,17 +47,17 @@ export default function BucketsPage() {
     const form = e.currentTarget;
     const formData = new FormData(form);
 
-    const componentName = formData.get(FORM_ELEMENTS_NAME.component) as
+    const componentId = formData.get(FORM_ELEMENTS_NAME.component) as
       | string
       | null;
     const creator = formData.get(FORM_ELEMENTS_NAME.creator) as string | null;
     const location = formData.get(FORM_ELEMENTS_NAME.location) as string | null;
 
-    if (componentName && creator) {
+    if (componentId && creator) {
       setIsSubmitBtnActive(true);
 
       const createBucketData: IBucketCreateDto = {
-        componentName: componentName.trim(),
+        componentId: componentId.trim(),
         creator: creator.trim(),
         ...(location && location.trim() ? { location: location.trim() } : {}),
       };
@@ -90,13 +91,13 @@ export default function BucketsPage() {
 
       switch (searchField) {
         case 'component':
-          return bucket.componentName.toLowerCase().includes(term);
+          return bucket.component.name.toLowerCase().includes(term);
         case 'location':
           return bucket.location?.toLowerCase().includes(term) || false;
         case 'all':
         default:
           return (
-            bucket.componentName.toLowerCase().includes(term) ||
+            bucket.component.name.toLowerCase().includes(term) ||
             bucket.creator.toLowerCase().includes(term) ||
             bucket.location?.toLowerCase().includes(term) ||
             false
@@ -104,26 +105,6 @@ export default function BucketsPage() {
       }
     });
   }, [buckets, searchTerm, searchField]);
-
-  const getStatusColor = (createdAt: string) => {
-    const daysOld = Math.floor(
-      (Date.now() - new Date(createdAt).getTime()) / (1000 * 60 * 60 * 24),
-    );
-    if (daysOld < 7) return 'bg-green-100 text-green-800';
-    if (daysOld < 30) return 'bg-yellow-100 text-yellow-800';
-    return 'bg-orange-100 text-orange-800';
-  };
-
-  const getStatusText = (createdAt: string) => {
-    const daysOld = Math.floor(
-      (Date.now() - new Date(createdAt).getTime()) / (1000 * 60 * 60 * 24),
-    );
-    if (daysOld === 0) return 'Сегодня';
-    if (daysOld === 1) return 'Вчера';
-    if (daysOld < 7) return `${daysOld} дн.`;
-    if (daysOld < 30) return `${daysOld} дн.`;
-    return `${Math.floor(daysOld / 30)} мес.`;
-  };
 
   const handleShowQR = (bucket: BucketQRData) => {
     setSelectedBucket(bucket);
@@ -138,16 +119,6 @@ export default function BucketsPage() {
       alert('Пожалуйста, разрешите всплывающие окна для печати');
       return;
     }
-
-    const qrData = JSON.stringify({
-      id: selectedBucket.id,
-      component: selectedBucket.componentName,
-      creator: selectedBucket.creator,
-      location: selectedBucket.location || '',
-      date: new Date().toISOString(),
-    });
-
-    const qrImageUrl = createQrImageUrl(qrData);
 
     printWindow.document.write(`
       <!DOCTYPE html>
@@ -281,10 +252,6 @@ export default function BucketsPage() {
     printWindow.document.close();
   };
 
-  const createQrImageUrl = (qrData: string) => {
-    return `https://quickchart.io/qr?text=${encodeURIComponent(qrData)}&size=520&margin=1&dark=000000&light=ffffff`;
-  };
-
   return (
     <div className="min-h-screen bg-gray-50 p-4 safe-padding">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
@@ -348,7 +315,7 @@ export default function BucketsPage() {
                     {componentsLoading ? 'Загрузка...' : 'Выберите компонент'}
                   </option>
                   {components.map((c) => (
-                    <option key={c.id} value={c.name}>
+                    <option key={c.id} value={c.id}>
                       {c.name}
                     </option>
                   ))}
@@ -628,7 +595,7 @@ export default function BucketsPage() {
                     <tr key={bucket.id} className="hover:bg-gray-50">
                       <td className="whitespace-nowrap px-6 py-4">
                         <div className="text-sm font-medium text-gray-900">
-                          {bucket.componentName}
+                          {bucket.component.name}
                         </div>
                       </td>
                       <td className="whitespace-nowrap px-6 py-4">
@@ -687,7 +654,8 @@ export default function BucketsPage() {
                           onClick={() =>
                             handleShowQR({
                               id: bucket.id,
-                              componentName: bucket.componentName,
+                              componentName: bucket.component.name,
+                              componentId: bucket.component.id,
                               creator: bucket.creator,
                               location: bucket.location,
                             })
@@ -724,7 +692,7 @@ export default function BucketsPage() {
                   <div className="flex items-start justify-between">
                     <div className="space-y-2 flex-1">
                       <p className="text-sm font-medium text-gray-900">
-                        {bucket.componentName}
+                        {bucket.component.name}
                       </p>
                       <div className="space-y-1">
                         <p className="flex items-center gap-1 text-xs text-gray-500">
@@ -797,7 +765,8 @@ export default function BucketsPage() {
                         onClick={() =>
                           handleShowQR({
                             id: bucket.id,
-                            componentName: bucket.componentName,
+                            componentName: bucket.component.name,
+                            componentId: bucket.component.id,
                             creator: bucket.creator,
                             location: bucket.location,
                           })
@@ -863,15 +832,13 @@ export default function BucketsPage() {
               {/* QR Code Image */}
               <div className="mb-4 rounded-lg border border-gray-200 bg-white p-4">
                 <img
-                  src={createQrImageUrl(
-                    JSON.stringify({
-                      id: selectedBucket.id,
-                      component: selectedBucket.componentName,
-                      creator: selectedBucket.creator,
-                      location: selectedBucket.location || '',
-                      date: new Date().toISOString(),
-                    }),
-                  )}
+                  src={createQrImageUrl({
+                    id: selectedBucket.id,
+                    componentId: selectedBucket.componentId,
+                    componentName: selectedBucket.componentName,
+                    creator: selectedBucket.creator,
+                    location: selectedBucket.location || '',
+                  })}
                   alt={`QR код для ${selectedBucket.componentName}`}
                   className="h-64 w-64"
                 />
@@ -937,6 +904,28 @@ export default function BucketsPage() {
   );
 }
 
-export function createQrImageUrl(qrData: string) {
-  return `https://quickchart.io/qr?text=${encodeURIComponent(qrData)}&size=520&margin=1&dark=000000&light=ffffff`;
+export function createQrImageUrl(qrData: BucketQRData) {
+  const qrDataString = JSON.stringify(qrData);
+
+  return `https://quickchart.io/qr?text=${encodeURIComponent(qrDataString)}&size=520&margin=1&dark=000000&light=ffffff`;
+}
+
+function getStatusColor(createdAt: string) {
+  const daysOld = Math.floor(
+    (Date.now() - new Date(createdAt).getTime()) / (1000 * 60 * 60 * 24),
+  );
+  if (daysOld < 7) return 'bg-green-100 text-green-800';
+  if (daysOld < 30) return 'bg-yellow-100 text-yellow-800';
+  return 'bg-orange-100 text-orange-800';
+}
+
+function getStatusText(createdAt: string) {
+  const daysOld = Math.floor(
+    (Date.now() - new Date(createdAt).getTime()) / (1000 * 60 * 60 * 24),
+  );
+  if (daysOld === 0) return 'Сегодня';
+  if (daysOld === 1) return 'Вчера';
+  if (daysOld < 7) return `${daysOld} дн.`;
+  if (daysOld < 30) return `${daysOld} дн.`;
+  return `${Math.floor(daysOld / 30)} мес.`;
 }

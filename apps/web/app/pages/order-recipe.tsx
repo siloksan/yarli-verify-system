@@ -6,7 +6,7 @@ import {
   type IScanEvent,
 } from '@repo/api';
 import { useOrder } from '~/features/orders/hooks/orders.hook';
-import { Component } from '~/features/order-recipe/ui/component';
+import { Component } from '~/features/order-recipe';
 import { STATUS_STYLES } from '~/features/order-recipe/constants';
 import type { ComponentStatus } from '~/features/order-recipe/types';
 

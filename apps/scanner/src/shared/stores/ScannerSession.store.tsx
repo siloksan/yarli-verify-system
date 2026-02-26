@@ -1,9 +1,9 @@
-import { ScannerRequestPayload } from '@repo/api';
+import { WebToAppMessage } from '@repo/api';
 import { create } from 'zustand';
 
 interface ScannerSessionState {
-  request: ScannerRequestPayload | null;
-  setRequest: (payload: ScannerRequestPayload) => void;
+  request: WebToAppMessage | null;
+  setRequest: (payload: WebToAppMessage) => void;
   clearSession: () => void;
 }
 

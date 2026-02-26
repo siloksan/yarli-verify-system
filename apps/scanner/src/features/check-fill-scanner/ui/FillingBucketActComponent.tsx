@@ -1,11 +1,13 @@
 import { useCameraPermissions } from 'expo-camera';
 import { Redirect, useRouter } from 'expo-router';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   View,
   StyleSheet,
   Dimensions,
   StatusBar,
+  Pressable,
+  Text,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -13,13 +15,24 @@ import {
   useScannerSessionStore,
   useWebViewBridgeStore,
 } from '@/src/shared/stores';
-import { AppToWebMessage, ICreateFillingActBucketDto } from '@repo/api';
+import {
+  AppToWebMessage,
+  ICreateFillingActBucketDto,
+  ScannerRequestPayload,
+} from '@repo/api';
 import { CameraPermission } from './CameraPermission';
 import { CameraUnavailable } from './CameraUnavailable';
 import { ScannerHeader } from './ScannerHeader';
 import { ScannerCamera } from './ScannerCamera';
 import { ScannerOverlay } from './ScannerOverlay';
 import { useFillingStore } from '../model/store/filling.store';
+import { useModal } from '@/src/shared/modal';
+import { CameraInstructions } from './CameraInstructions';
+import {
+  BucketScannedSuccess,
+  ScannedError,
+  ScannerInProgress,
+} from './ScannerModalChildrens';
 
 const { width } = Dimensions.get('window');
 const SCANNER_SIZE = width * 0.8;
@@ -31,25 +44,46 @@ export function FillingBucketActComponent() {
   const lockRef = useRef(false);
   const webViewRef = useWebViewBridgeStore((s) => s.webViewRef);
   const request = useScannerSessionStore((s) => s.request);
-
+  const { showModal, hideModal } = useModal();
   const sendResultToWeb = (response: AppToWebMessage) => {
     if (!webViewRef) return;
 
     webViewRef.postMessage(JSON.stringify(response));
   };
+  console.log('lockRef: ', lockRef);
 
   const state = useFillingStore((store) => store.state);
   const scanBucket = useFillingStore((store) => store.scanBucket);
+  const scanComponent = useFillingStore((store) => store.scanComponent);
   const startBucketValidation = useFillingStore(
     (store) => store.startBucketValidation,
   );
   const startComponentValidation = useFillingStore(
     (store) => store.startComponentValidation,
   );
+  const reset = useFillingStore((store) => store.reset);
 
-  // const handleReset = () => {
-  //   reset();
-  // };
+  const resetScan = () => {
+    reset();
+    lockRef.current = false;
+  };
+
+  useEffect(() => {
+    if (state.step === 'error') {
+      showModal(<ScannedError hideModal={hideModal} message={state.message} />);
+    }
+
+    if (state.step === 'bucket_completed') {
+      showModal(
+        <BucketScannedSuccess
+          hideModal={hideModal}
+          lockRef={lockRef}
+          componentName={state.bucket.componentName}
+        />,
+      );
+    }
+  }, [state]);
+  console.log('state: ', state);
 
   if (!permission) {
     return <CameraPermission />;
@@ -59,35 +93,41 @@ export function FillingBucketActComponent() {
     return <CameraUnavailable requestPermission={requestPermission} />;
   }
 
-  if (request == null) {
+  if (request?.type !== 'FILLING_BUCKET_ACT') {
     return null;
   }
 
+  const { payload: requestPayload } = request;
+
   const handleScan: HandleScan = async ({ data }) => {
+    console.log('scan');
     if (lockRef.current) return;
     lockRef.current = true;
 
     if (state.step === 'scan_bucket') {
+      showModal(<ScannerInProgress hideModal={hideModal} />);
       startBucketValidation({
         bucketCode: data,
-        testedComponentName: request.componentName,
+        testedComponentName: requestPayload.componentName,
       });
-      scanBucket(data);
+
+      scanBucket();
     }
 
     if (state.step === 'bucket_completed') {
-      const createScanEventData: ICreateFillingActBucketDto = {
-        bucketId: state.bucket.id,
-        orderId: request.orderId,
-        validBatchesId: request.validBatches,
-        componentId: request.componentId,
-        componentName: request.componentName,
-        componentBarcode: data,
-        workerName: 'Иван Иванович Иванов',
-        weight: null,
-      };
+      const createScanEventData = getCreateScanEventData(
+        requestPayload,
+        state.bucket.id,
+        data,
+      );
       startComponentValidation(createScanEventData, state.bucket);
+      showModal(<ScannerInProgress hideModal={hideModal} />);
+      await scanComponent();
     }
+  };
+
+  const showInstruction = () => {
+    showModal(<CameraInstructions />);
   };
 
   return (
@@ -100,39 +140,38 @@ export function FillingBucketActComponent() {
         <ScannerCamera
           torch={torch}
           onScan={handleScan}
-          codeTypes={['ean13']}
+          codeTypes={[`${state.step === 'scan_bucket' ? 'qr' : 'ean13'}`]}
         />
-
         <ScannerOverlay
           scannerSize={SCANNER_SIZE}
           torch={torch}
           onToggleTorch={() => setTorch((prev) => !prev)}
         />
       </View>
-
-      {/* <View style={styles.instructions}>
+      <View style={styles.instructions}>
         <View style={styles.targetInfoCard}>
+          <Text style={styles.targetInfoText}>step: {state.step}</Text>
           <Text style={styles.targetInfoTitle}>Component to validate</Text>
           <Text style={styles.targetInfoText}>
-            {request?.componentName ?? 'N/A'}
+            {requestPayload.componentName}
           </Text>
           <Text style={styles.targetInfoTitle}>Batches to validate</Text>
           <Text style={styles.targetInfoText}>
-            {request?.validBatches?.length
-              ? request.validBatches.join(', ')
+            {requestPayload.validBatches?.length
+              ? requestPayload.validBatches.join(', ')
               : 'No batch restrictions'}
           </Text>
         </View>
-        {state.status === 'idle' ? (
+        {state.step === 'scan_bucket' ? (
           <Pressable style={styles.resetButton} onPress={showInstruction}>
             <Text style={styles.resetButtonText}>Инструкция пользования</Text>
           </Pressable>
         ) : (
-          <Pressable style={styles.resetButton} onPress={handleReset}>
+          <Pressable style={styles.resetButton} onPress={resetScan}>
             <Text style={styles.resetButtonText}>Сканировать заново</Text>
           </Pressable>
         )}
-      </View> */}
+      </View>
     </SafeAreaView>
   );
 }
@@ -199,3 +238,20 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
 });
+
+function getCreateScanEventData(
+  request: ScannerRequestPayload,
+  bucketId: string,
+  code: string,
+): ICreateFillingActBucketDto {
+  return {
+    bucketId,
+    orderId: request.orderId,
+    validBatchesId: request.validBatches,
+    componentId: request.componentId,
+    componentName: request.componentName,
+    componentBarcode: code,
+    workerName: 'Иван Иванович Иванов',
+    weight: null,
+  };
+}

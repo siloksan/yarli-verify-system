@@ -35,7 +35,11 @@ export function CheckComponent() {
   const router = useRouter();
   const webViewRef = useWebViewBridgeStore((s) => s.webViewRef);
   const request = useScannerSessionStore((s) => s.request);
+  console.log('request: ', request);
   const { hideModal } = useModal();
+
+  if (request?.type !== 'SCAN_COMPONENT') return null;
+  const { payload: requestPayload } = request;
 
   const sendResultToWeb = (response: AppToWebMessage) => {
     if (!webViewRef) return;
@@ -91,12 +95,12 @@ export function CheckComponent() {
         <View style={styles.targetInfoCard}>
           <Text style={styles.targetInfoTitle}>Component to validate</Text>
           <Text style={styles.targetInfoText}>
-            {request?.componentName ?? 'N/A'}
+            {requestPayload?.componentName ?? 'N/A'}
           </Text>
           <Text style={styles.targetInfoTitle}>Batches to validate</Text>
           <Text style={styles.targetInfoText}>
-            {request?.validBatches?.length
-              ? request.validBatches.join(', ')
+            {requestPayload?.validBatches?.length
+              ? requestPayload.validBatches.join(', ')
               : 'No batch restrictions'}
           </Text>
         </View>

@@ -11,54 +11,67 @@ export class BucketsService {
 
   async create(createBucketDto: CreateBucketDto) {
     const component = await this.prisma.component.findUnique({
-      where: { name: createBucketDto.componentName }
+      where: { id: createBucketDto.componentId },
     });
-  
+
     if (!component) {
-      throw new NotFoundException(`Компонент с таким именем: "${createBucketDto.componentName}" не найден`);
+      throw new NotFoundException(`Компонент не найден в системе`);
     }
 
     const bucket = await this.prisma.bucket.create({
       data: createBucketDto,
-    });
-
-    return plainToInstance(
-      BucketResponseDto,
-      bucket,
-      {
-        excludeExtraneousValues: true,
+      include: {
+        component: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
-    );
+    });
+    console.log('bucket: ', bucket);
+
+    return plainToInstance(BucketResponseDto, bucket, {
+      excludeExtraneousValues: true,
+    });
   }
 
   async findAll(search?: string) {
-     const where: Prisma.BucketWhereInput | undefined = search
-          ? {
-              OR: [
-                {
-                  componentName: {
+    const where: Prisma.BucketWhereInput | undefined = search
+      ? {
+          OR: [
+            {
+              component: {
+                is: {
+                  name: {
                     contains: search,
                     mode: Prisma.QueryMode.insensitive,
                   },
                 },
-              ],
-            }
-          : undefined;
+              },
+            },
+          ],
+        }
+      : undefined;
 
     const buckets = await this.prisma.bucket.findMany({
       where,
       orderBy: {
         createdAt: 'desc',
       },
+      include: {
+        component: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
     });
 
-    return plainToInstance(
-      BucketResponseDto,
-      buckets,
-      {
-        excludeExtraneousValues: true,
-      },
-    );
+    return plainToInstance(BucketResponseDto, buckets, {
+      excludeExtraneousValues: true,
+    });
   }
 
   async findOne(id: string) {
@@ -72,13 +85,9 @@ export class BucketsService {
       throw new NotFoundException('Bucket not found');
     }
 
-    return plainToInstance(
-      BucketResponseDto,
-      bucket,
-      {
-        excludeExtraneousValues: true,
-      },
-    );
+    return plainToInstance(BucketResponseDto, bucket, {
+      excludeExtraneousValues: true,
+    });
   }
 
   async update(id: string, updateBucketDto: UpdateBucketDto) {
@@ -89,14 +98,9 @@ export class BucketsService {
       data: updateBucketDto,
     });
 
-    
-    return plainToInstance(
-      BucketResponseDto,
-      updateBucket,
-      {
-        excludeExtraneousValues: true,
-      },
-    );
+    return plainToInstance(BucketResponseDto, updateBucket, {
+      excludeExtraneousValues: true,
+    });
   }
 
   async remove(id: string) {
@@ -106,12 +110,8 @@ export class BucketsService {
       },
     });
 
-    return plainToInstance(
-      BucketResponseDto,
-      deletedBucket,
-      {
-        excludeExtraneousValues: true,
-      },
-    );
+    return plainToInstance(BucketResponseDto, deletedBucket, {
+      excludeExtraneousValues: true,
+    });
   }
 }

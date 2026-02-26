@@ -29,6 +29,8 @@ export class FillingBucketActsService {
         },
       },
     });
+    console.log('createFillingBucketActDto: ', createFillingBucketActDto);
+    console.log('batch: ', batch);
 
     if (!batch) {
       throw new NotFoundException('Компонент не найден в системе');

@@ -1,11 +1,9 @@
-import { type IComponentBatchQrPayload, type IComponentDto } from '@repo/api';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import { useAllComponents } from '~/features/components/hooks/components.hook';
 
 type BarcodeState = {
   imageUrl: string;
-  payload: string;
   componentName: string;
   batch: string;
   ean13: string;
@@ -19,9 +17,12 @@ export default function ComponentsPage() {
   const [searchInput, setSearchInput] = useState('');
   const [barcodeState, setBarcodeState] = useState<BarcodeState | null>(null);
 
-  const { data: components, isLoading, isError, error } = useAllComponents(
-    search || undefined,
-  );
+  const {
+    data: components,
+    isLoading,
+    isError,
+    error,
+  } = useAllComponents(search || undefined);
 
   const totalBatchCount = useMemo(() => {
     return (components ?? []).reduce((sum, item) => {
@@ -233,41 +234,36 @@ export default function ComponentsPage() {
                     )}
 
                     {component.batches.map((batch) => {
-                      const {barcode, batchNumber, id} = batch;
+                      const { barcode, batchNumber, id } = batch;
                       return (
-                      <div
-                        key={`${component.id}-${batch}`}
-                        className="flex flex-col gap-2 rounded-xl border border-gray-200 bg-gray-50 p-3 sm:flex-row sm:items-center sm:justify-between"
-                      >
-                        <div className="min-w-0">
-                          <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
-                            Партия
-                          </p>
-                          <p className="truncate text-sm font-semibold text-gray-700">
-                            {batchNumber}
-                          </p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const payload = buildBatchQrPayload(component, batchNumber);
-                            const payloadString = JSON.stringify(payload);
-                            console.log('barcode: ', barcode);
-
-                            setBarcodeState({
-                              payload: payloadString,
-                              componentName: component.name,
-                              batch: batchNumber,
-                              ean13: barcode,
-                              imageUrl: createEan13ImageUrl(barcode),
-                            });
-                          }}
-                          className="inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:bg-gray-100"
+                        <div
+                          key={`${component.id}-${batch}`}
+                          className="flex flex-col gap-2 rounded-xl border border-gray-200 bg-gray-50 p-3 sm:flex-row sm:items-center sm:justify-between"
                         >
-                          Создать EAN-13
-                        </button>
-                      </div>
-                    )
+                          <div className="min-w-0">
+                            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                              Партия
+                            </p>
+                            <p className="truncate text-sm font-semibold text-gray-700">
+                              {batchNumber}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setBarcodeState({
+                                componentName: component.name,
+                                batch: batchNumber,
+                                ean13: barcode,
+                                imageUrl: createEan13ImageUrl(barcode),
+                              });
+                            }}
+                            className="inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:bg-gray-100"
+                          >
+                            Создать EAN-13
+                          </button>
+                        </div>
+                      );
                     })}
                   </div>
                 )}
@@ -313,10 +309,6 @@ export default function ComponentsPage() {
               {barcodeState.ean13}
             </p>
 
-            <p className="mt-3 break-all rounded-lg bg-gray-50 p-2 text-xs text-gray-600">
-              {barcodeState.payload}
-            </p>
-
             <button
               type="button"
               onClick={handlePrintBarcode}
@@ -338,18 +330,6 @@ function escapeHtml(value: string) {
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#039;');
-}
-
-function buildBatchQrPayload(
-  component: IComponentDto,
-  batch: string,
-): IComponentBatchQrPayload {
-  return {
-    batchId: `${component.id}:${batch}`,
-    batch,
-    componentId: component.id,
-    componentName: component.name,
-  };
 }
 
 function createEan13ImageUrl(ean13: string) {

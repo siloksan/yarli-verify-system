@@ -2,7 +2,7 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { WebView, type WebViewMessageEvent } from 'react-native-webview';
-import { WebToAppMessage } from '@repo/api';
+import { SCANNER_ROUTES, WEB_TO_APP_MESSAGE_TYPES } from '@repo/api';
 import {
   useScannerSessionStore,
   useWebViewBridgeStore,
@@ -44,16 +44,27 @@ export default function OrderRecipeWebView() {
   }, [orderId]);
 
   const handleWebMessage = useCallback((event: WebViewMessageEvent) => {
-    const parsed: WebToAppMessage = JSON.parse(event.nativeEvent.data);
+    const parsed = JSON.parse(event.nativeEvent.data);
 
-    if (parsed.type !== 'SCAN_COMPONENT') {
+    if (!Object.values(WEB_TO_APP_MESSAGE_TYPES).includes(parsed.type)) {
       return;
     }
 
-    setRequest(parsed.payload);
-    router.push({
-      pathname: `/scanner/check`,
-    });
+    setRequest(parsed);
+    switch (parsed.type) {
+      case WEB_TO_APP_MESSAGE_TYPES.SCAN_COMPONENT:
+        router.push({
+          pathname: `/${SCANNER_ROUTES.scanner_check}`,
+        });
+        break;
+      case WEB_TO_APP_MESSAGE_TYPES.FILLING_BUCKET_ACT:
+        router.push({
+          pathname: `/${SCANNER_ROUTES.scanner_check_and_fill}`,
+        });
+        break;
+      default:
+        break;
+    }
   }, []);
 
   if (!WEB_CLIENT_URL || !sourceUri) {

@@ -14,8 +14,8 @@ interface FillingStore {
     createScanEventData: ICreateFillingActBucketDto,
     bucket: BucketQRData,
   ) => void;
-  scanBucket: (code: string) => void;
-  scanComponent: (code: string) => Promise<void>;
+  scanBucket: () => void;
+  scanComponent: () => Promise<void>;
 
   reset: () => void;
   retry: () => void;

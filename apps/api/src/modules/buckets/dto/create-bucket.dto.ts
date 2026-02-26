@@ -1,13 +1,18 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IBucketCreateDto, IBucketResponseDto } from '@repo/api';
-import { Expose } from 'class-transformer';
-import { IsDateString, IsOptional, IsString } from 'class-validator';
+import { Expose, Type } from 'class-transformer';
+import {
+  IsDateString,
+  IsOptional,
+  IsString,
+  ValidateNested,
+} from 'class-validator';
 
 export class CreateBucketDto implements IBucketCreateDto {
   @ApiProperty()
   @IsString()
   @Expose()
-  componentName: string;
+  componentId: string;
 
   @ApiProperty()
   @IsString()
@@ -21,7 +26,7 @@ export class CreateBucketDto implements IBucketCreateDto {
   location?: string;
 }
 
-export class BucketResponseDto implements IBucketResponseDto {
+class ComponentDto {
   @ApiProperty()
   @IsString()
   @Expose()
@@ -30,12 +35,14 @@ export class BucketResponseDto implements IBucketResponseDto {
   @ApiProperty()
   @IsString()
   @Expose()
-  componentId: string;
+  name: string;
+}
 
+export class BucketResponseDto implements IBucketResponseDto {
   @ApiProperty()
   @IsString()
   @Expose()
-  componentName: string;
+  id: string;
 
   @ApiProperty()
   @IsString()
@@ -65,4 +72,10 @@ export class BucketResponseDto implements IBucketResponseDto {
   @IsString()
   @Expose()
   location?: string;
+
+  @ApiProperty({ type: ComponentDto })
+  @ValidateNested()
+  @Type(() => ComponentDto)
+  @Expose()
+  component: ComponentDto;
 }

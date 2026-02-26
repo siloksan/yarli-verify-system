@@ -1,15 +1,14 @@
 export interface IBucketCreateDto {
-  componentName: string;
+  componentId: string;
   creator: string;
   location?: string;
 }
 
 export interface IBucketResponseDto {
   id: string;
-  componentId: string;
-  componentName: string;
   creator: string;
   location?: string;
   createdAt: string;
   updatedAt: string;
+  component: { name: string; id: string };
 }
