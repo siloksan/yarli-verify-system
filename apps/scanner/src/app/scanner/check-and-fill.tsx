@@ -1,6 +1,6 @@
-import { View } from 'react-native-reanimated/lib/typescript/Animated';
+import { FillingBucketActComponent } from '@/src/features/check-fill-scanner';
 
 export default function Check() {
   //
-  return <View />;
+  return <FillingBucketActComponent />;
 }

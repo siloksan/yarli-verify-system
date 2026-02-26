@@ -1,1 +1,1 @@
-export { CheckComponent } from './ui/CheckComponent';
+export { FillingBucketActComponent } from './ui/FillingBucketActComponent';

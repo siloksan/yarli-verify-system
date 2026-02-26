@@ -1,1 +1,1 @@
-export * from './CheckComponent';
+export * from './FillingBucketActComponent';
