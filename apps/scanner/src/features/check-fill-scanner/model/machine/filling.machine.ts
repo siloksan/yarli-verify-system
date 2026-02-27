@@ -10,12 +10,6 @@ export const FillingMachine = {
     return { step: 'scan_bucket' };
   },
 
-  startBucketValidation(
-    bucketValidationData: BucketValidationData,
-  ): FillingState {
-    return { step: 'bucket_validating', bucketValidationData };
-  },
-
   bucketValidated(bucket: BucketQRData): FillingState {
     return { step: 'bucket_completed', bucket };
   },

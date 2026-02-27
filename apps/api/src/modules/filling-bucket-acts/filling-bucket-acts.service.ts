@@ -35,8 +35,8 @@ export class FillingBucketActsService {
     if (!batch) {
       throw new NotFoundException('Компонент не найден в системе');
     }
-
-    if (batch.component.id !== createData.componentId) {
+    // componentId in createFillingBucketActDto !== batch.component.id, createFillingBucketActDto orderDto data
+    if (batch.component.name !== componentName) {
       throw new NotFoundException(
         `Сканирован ${batch.component.name}, ожидался ${componentName}`,
       );
@@ -50,13 +50,41 @@ export class FillingBucketActsService {
     const createdAct = await this.prisma.fillingActBucket.create({
       data: {
         ...createData,
+        componentId: batch.component.id,
         batchId: batch.id,
+      },
+      select: {
+        id: true,
+        workerName: true,
+        weight: true,
+        createdAt: true,
+        bucketId: true,
+        componentId: true,
+        orderId: true,
+        component: {
+          select: {
+            name: true,
+          },
+        },
+        batch: {
+          select: {
+            batchNumber: true,
+          },
+        },
       },
     });
 
-    return plainToInstance(FillingBucketActResponseDto, createdAct, {
-      excludeExtraneousValues: true,
-    });
+    return plainToInstance(
+      FillingBucketActResponseDto,
+      {
+        ...createdAct,
+        componentName: createdAct.component.name,
+        componentBatch: createdAct.batch.batchNumber,
+      },
+      {
+        excludeExtraneousValues: true,
+      },
+    );
   }
 
   async findAll() {

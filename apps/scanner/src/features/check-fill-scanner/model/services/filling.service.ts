@@ -4,52 +4,43 @@ import { FillingMachine } from '../machine/filling.machine';
 import { FillingState } from '../machine/filling.types';
 import { getBucketData } from '../../utils';
 import { createFillingAct } from '../../api';
-import { HttpError } from '@repo/api';
+import { BucketQRData, HttpError, ICreateFillingActBucketDto } from '@repo/api';
 
-export function getBucketScanState(currentState: FillingState) {
-  if (currentState.step !== 'bucket_validating') {
-    return currentState;
-  }
-
-  const { bucketValidationData } = currentState;
-  const parsedData = getBucketData(bucketValidationData.bucketCode);
-
+export function getBucketScanState(
+  bucketCode: string,
+  testedComponentName: string,
+): FillingState {
+  const parsedData = getBucketData(bucketCode);
+  const initialState = FillingMachine.initial();
   if (!parsedData) {
     return FillingMachine.fail(
       'Не валидный QRcode, попробуйте ещё раз, или введите код вручную',
-      currentState,
+      initialState,
     );
   }
 
-  const isValidBucket =
-    parsedData.componentName === bucketValidationData.testedComponentName;
+  const isValidBucket = parsedData.componentName === testedComponentName;
 
   return isValidBucket
     ? FillingMachine.bucketValidated(parsedData)
-    : FillingMachine.fail('Сканирована неверная тара', currentState);
+    : FillingMachine.fail('Сканирована неверная тара', initialState);
 }
 
 export async function getComponentScanState(
-  currentState: FillingState,
+  createScanEventData: ICreateFillingActBucketDto,
+  bucket: BucketQRData,
 ): Promise<FillingState> {
-  if (currentState.step !== 'component_validating') {
-    return currentState;
-  }
-
   try {
-    const fillingActData = await createFillingAct(
-      currentState.createScanEventData,
-    );
+    const fillingActData = await createFillingAct(createScanEventData);
 
     return FillingMachine.componentValidated(fillingActData);
   } catch (error) {
-    console.error(error);
-
+    console.log(error);
     return FillingMachine.fail(
       error instanceof HttpError
         ? error.message
         : 'Ошибка при валидации компонента',
-      FillingMachine.bucketValidated(currentState.bucket),
+      FillingMachine.bucketValidated(bucket),
     );
   }
 }

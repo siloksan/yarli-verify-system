@@ -25,65 +25,28 @@ import { CameraUnavailable } from './CameraUnavailable';
 import { ScannerHeader } from './ScannerHeader';
 import { ScannerCamera } from './ScannerCamera';
 import { ScannerOverlay } from './ScannerOverlay';
-import { useFillingStore } from '../model/store/filling.store';
 import { useModal } from '@/src/shared/modal';
 import { CameraInstructions } from './CameraInstructions';
-import {
-  BucketScannedSuccess,
-  ScannedError,
-  ScannerInProgress,
-} from './ScannerModalChildrens';
+import { useFilling } from '../hooks/useFilling';
 
 const { width } = Dimensions.get('window');
 const SCANNER_SIZE = width * 0.8;
-type HandleScan = (event: { data: string }) => void;
 
 export function FillingBucketActComponent() {
   const [torch, setTorch] = useState(false);
   const [permission, requestPermission] = useCameraPermissions();
-  const lockRef = useRef(false);
   const webViewRef = useWebViewBridgeStore((s) => s.webViewRef);
-  const request = useScannerSessionStore((s) => s.request);
   const { showModal, hideModal } = useModal();
-  const sendResultToWeb = (response: AppToWebMessage) => {
-    if (!webViewRef) return;
+  const filling = useFilling();
+  if (!filling) return null;
 
-    webViewRef.postMessage(JSON.stringify(response));
-  };
-  console.log('lockRef: ', lockRef);
+  const { state, handleScan, turnOnScanner, request } = filling;
 
-  const state = useFillingStore((store) => store.state);
-  const scanBucket = useFillingStore((store) => store.scanBucket);
-  const scanComponent = useFillingStore((store) => store.scanComponent);
-  const startBucketValidation = useFillingStore(
-    (store) => store.startBucketValidation,
-  );
-  const startComponentValidation = useFillingStore(
-    (store) => store.startComponentValidation,
-  );
-  const reset = useFillingStore((store) => store.reset);
+  // const sendResultToWeb = (response: AppToWebMessage) => {
+  //   if (!webViewRef) return;
 
-  const resetScan = () => {
-    reset();
-    lockRef.current = false;
-  };
-
-  useEffect(() => {
-    if (state.step === 'error') {
-      showModal(<ScannedError hideModal={hideModal} message={state.message} />);
-    }
-
-    if (state.step === 'bucket_completed') {
-      showModal(
-        <BucketScannedSuccess
-          hideModal={hideModal}
-          lockRef={lockRef}
-          componentName={state.bucket.componentName}
-        />,
-      );
-    }
-  }, [state]);
-  console.log('state: ', state);
+  //   webViewRef.postMessage(JSON.stringify(response));
+  // };
 
   if (!permission) {
     return <CameraPermission />;
@@ -92,39 +55,6 @@ export function FillingBucketActComponent() {
   if (!permission.granted) {
     return <CameraUnavailable requestPermission={requestPermission} />;
   }
-
-  if (request?.type !== 'FILLING_BUCKET_ACT') {
-    return null;
-  }
-
-  const { payload: requestPayload } = request;
-
-  const handleScan: HandleScan = async ({ data }) => {
-    console.log('scan');
-    if (lockRef.current) return;
-    lockRef.current = true;
-
-    if (state.step === 'scan_bucket') {
-      showModal(<ScannerInProgress hideModal={hideModal} />);
-      startBucketValidation({
-        bucketCode: data,
-        testedComponentName: requestPayload.componentName,
-      });
-
-      scanBucket();
-    }
-
-    if (state.step === 'bucket_completed') {
-      const createScanEventData = getCreateScanEventData(
-        requestPayload,
-        state.bucket.id,
-        data,
-      );
-      startComponentValidation(createScanEventData, state.bucket);
-      showModal(<ScannerInProgress hideModal={hideModal} />);
-      await scanComponent();
-    }
-  };
 
   const showInstruction = () => {
     showModal(<CameraInstructions />);
@@ -140,7 +70,7 @@ export function FillingBucketActComponent() {
         <ScannerCamera
           torch={torch}
           onScan={handleScan}
-          codeTypes={[`${state.step === 'scan_bucket' ? 'qr' : 'ean13'}`]}
+          codeTypes={['qr', 'ean13']}
         />
         <ScannerOverlay
           scannerSize={SCANNER_SIZE}
@@ -153,24 +83,25 @@ export function FillingBucketActComponent() {
           <Text style={styles.targetInfoText}>step: {state.step}</Text>
           <Text style={styles.targetInfoTitle}>Component to validate</Text>
           <Text style={styles.targetInfoText}>
-            {requestPayload.componentName}
+            {request.payload.componentName}
           </Text>
           <Text style={styles.targetInfoTitle}>Batches to validate</Text>
           <Text style={styles.targetInfoText}>
-            {requestPayload.validBatches?.length
-              ? requestPayload.validBatches.join(', ')
+            {request.payload.validBatches?.length
+              ? request.payload.validBatches.join(', ')
               : 'No batch restrictions'}
           </Text>
         </View>
-        {state.step === 'scan_bucket' ? (
-          <Pressable style={styles.resetButton} onPress={showInstruction}>
-            <Text style={styles.resetButtonText}>Инструкция пользования</Text>
-          </Pressable>
-        ) : (
-          <Pressable style={styles.resetButton} onPress={resetScan}>
-            <Text style={styles.resetButtonText}>Сканировать заново</Text>
-          </Pressable>
-        )}
+        {
+          state.step === 'scan_bucket' ? (
+            <Pressable style={styles.resetButton} onPress={showInstruction}>
+              <Text style={styles.resetButtonText}>Инструкция пользования</Text>
+            </Pressable>
+          ) : null
+          // <Pressable style={styles.resetButton} onPress={resetScan}>
+          //   <Text style={styles.resetButtonText}>Сканировать заново</Text>
+          // </Pressable>
+        }
       </View>
     </SafeAreaView>
   );
@@ -238,20 +169,3 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
 });
-
-function getCreateScanEventData(
-  request: ScannerRequestPayload,
-  bucketId: string,
-  code: string,
-): ICreateFillingActBucketDto {
-  return {
-    bucketId,
-    orderId: request.orderId,
-    validBatchesId: request.validBatches,
-    componentId: request.componentId,
-    componentName: request.componentName,
-    componentBarcode: code,
-    workerName: 'Иван Иванович Иванов',
-    weight: null,
-  };
-}

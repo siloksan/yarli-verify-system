@@ -11,7 +11,6 @@ export interface BucketValidationData {
 
 export type FillingState =
   | { step: 'scan_bucket' }
-  | { step: 'bucket_validating'; bucketValidationData: BucketValidationData }
   | { step: 'bucket_completed'; bucket: BucketQRData }
   | {
       step: 'component_validating';
