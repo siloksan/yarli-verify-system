@@ -47,6 +47,7 @@ export class FillingBucketActsService {
         `Сканирована неразрешённая партия ${batch.batchNumber}`,
       );
     }
+    
     const createdAct = await this.prisma.fillingActBucket.create({
       data: {
         ...createData,

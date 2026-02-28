@@ -7,8 +7,12 @@ import { API_ROUTES } from '@repo/api';
 export class ScanEventsController {
   constructor(private readonly scanEventsService: ScanEventsService) {}
 
-  @Post()
-  create(@Body() createScanEventDto: CreateScanEventDto) {
-    return this.scanEventsService.create(createScanEventDto);
+  @Post('barcode')
+  createBarqodeScanEvent(@Body() createScanEventDto: CreateScanEventDto) {
+    return this.scanEventsService.createScanEventBarcode(createScanEventDto);
+  }
+
+  createQrqodeScanEvent(@Body() createScanEventDto: CreateScanEventDto) {
+    return this.scanEventsService.createScanEventBarcode(createScanEventDto);
   }
 }

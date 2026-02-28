@@ -123,3 +123,12 @@ function getCreateScanEventData(
     weight: null,
   };
 }
+// const result = await validateCode({
+//   scannedCode: event.data,
+//   orderId,
+//   componentId,
+//   componentName,
+//   validBatches,
+//   deviceId: 'scanner-mobile',
+//   operatorId: 'Иван Иванович Иванов',
+// });

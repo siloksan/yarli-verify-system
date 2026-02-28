@@ -1,37 +1,31 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { ICreateScanEventDto, IScanEventDto, ScanResult } from '@repo/api';
+import { ICreateBarcodeScanEventDto, IScanEventDto, ScanResult } from '@repo/api';
 import { Expose } from 'class-transformer';
 import { IsArray, IsString, IsEnum } from 'class-validator';
 
-export class CreateScanEventDto implements ICreateScanEventDto {
+export class CreateBarcodeScanEventDto implements ICreateBarcodeScanEventDto {
   @ApiProperty()
   @IsString()
-  @Expose()
   scannedCode: string;
 
   @ApiProperty()
   @IsString()
-  @Expose()
   orderId: string;
 
   @ApiProperty()
   @IsString()
-  @Expose()
   componentName: string;
 
   @ApiProperty()
   @IsString()
-  @Expose()
   componentId: string;
 
   @ApiProperty()
   @IsString()
-  @Expose()
   deviceId: string;
 
   @ApiProperty()
   @IsString()
-  @Expose()
   operatorId: string;
 
   @ApiProperty({
@@ -39,7 +33,39 @@ export class CreateScanEventDto implements ICreateScanEventDto {
   })
   @IsArray()
   @IsString({ each: true })
-  @Expose()
+  validBatches: string[];
+}
+
+export class CreateQrcodeScanEventDto implements ICreateScanEventDto {
+  @ApiProperty()
+  @IsString()
+  scannedCode: string;
+
+  @ApiProperty()
+  @IsString()
+  orderId: string;
+
+  @ApiProperty()
+  @IsString()
+  componentName: string;
+
+  @ApiProperty()
+  @IsString()
+  componentId: string;
+
+  @ApiProperty()
+  @IsString()
+  deviceId: string;
+
+  @ApiProperty()
+  @IsString()
+  operatorId: string;
+
+  @ApiProperty({
+    type: [String],
+  })
+  @IsArray()
+  @IsString({ each: true })
   validBatches: string[];
 }
 

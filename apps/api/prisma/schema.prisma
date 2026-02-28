@@ -85,17 +85,19 @@ model ScanEvent {
   orderId     String
   componentId String
   batchId     String?
-  scannedCode String
+  scannedCode String?
   result      ScanResult
   scannedAt   DateTime   @default(now())
   deviceId    String?
   operatorId  String?
   notes       String?
+  bucketId    String
 
   order     ProductionOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
   component RecipeComponent @relation(fields: [componentId], references: [id], onDelete: Cascade)
   batch     ComponentBatch? @relation(fields: [batchId], references: [id], onDelete: SetNull)
-
+  bucket     ComponentBatch? @relation(fields: [bucketId], references: [id], onDelete: SetNull)
+  
   @@index([orderId])
   @@index([componentId])
   @@index([batchId])
@@ -111,6 +113,7 @@ model Bucket {
   updatedAt     DateTime           @updatedAt
   fillingActs   FillingActBucket[]
   component     Component          @relation(fields: [componentId], references: [id], onDelete: Cascade)
+  scanEvents    ScanEvent[]
 }
 
 model FillingActBucket {

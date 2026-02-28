@@ -1,5 +1,6 @@
 export * from './bucket.dto.js';
 export * from './filling-bucket-act.dto.js';
+export * from './scan-event.dto.js'
 
 export enum OrderStatus {
   OPEN = 'OPEN',
@@ -61,16 +62,6 @@ export interface IBatchDto {
   componentId: string;
   componentName: string;
   code: string;
-}
-
-export interface ICreateScanEventDto {
-  scannedCode: string;
-  componentName: string;
-  componentId: string;
-  orderId: string;
-  deviceId: string;
-  operatorId: string;
-  validBatches: string[];
 }
 
 export interface IScanEventDto {

@@ -8,7 +8,7 @@ import { plainToInstance } from 'class-transformer';
 export class ScanEventsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(createScanEventDto: CreateScanEventDto) {
+  async createScanEventBarcode(createScanEventDto: CreateScanEventDto) {
     const {
       scannedCode,
       orderId,
@@ -20,9 +20,7 @@ export class ScanEventsService {
     } = createScanEventDto;
 
     const scannedData = await this.prisma.componentBatch.findFirst({
-      where: {
-        OR: [{ barcode: scannedCode }],
-      },
+      where: { barcode: scannedCode },
       select: {
         id: true,
         batchNumber: true,
