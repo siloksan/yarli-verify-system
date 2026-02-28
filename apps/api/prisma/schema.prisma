@@ -91,7 +91,7 @@ model ScanEvent {
   deviceId    String?
   operatorId  String?
   notes       String?
-  bucketId    String
+  bucketId    String?
 
   order     ProductionOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
   component RecipeComponent @relation(fields: [componentId], references: [id], onDelete: Cascade)

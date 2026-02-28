@@ -1,3 +1,5 @@
+import { BucketQRData } from 'entities/bucket.entity';
+
 export interface ICreateBarcodeScanEventDto {
   scannedCode: string;
   componentName: string;

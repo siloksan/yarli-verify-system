@@ -9,10 +9,11 @@ export class ScanEventsController {
 
   @Post('barcode')
   createBarqodeScanEvent(@Body() createScanEventDto: CreateScanEventDto) {
-    return this.scanEventsService.createScanEventBarcode(createScanEventDto);
+    return this.scanEventsService.createBarcodeScanEvent(createScanEventDto);
   }
 
+  @Post('qrcode')
   createQrqodeScanEvent(@Body() createScanEventDto: CreateScanEventDto) {
-    return this.scanEventsService.createScanEventBarcode(createScanEventDto);
+    return this.scanEventsService.createQrcodeScanEvent(createScanEventDto);
   }
 }

@@ -1,7 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { ICreateBarcodeScanEventDto, IScanEventDto, ScanResult } from '@repo/api';
-import { Expose } from 'class-transformer';
-import { IsArray, IsString, IsEnum } from 'class-validator';
+import {
+  ICreateBarcodeScanEventDto,
+  IScanEventDto,
+  ScanResult,
+  ICreateQrcodeScanEventDto,
+  BucketQRData,
+} from '@repo/api';
+import { Expose, Type } from 'class-transformer';
+import { IsArray, IsString, IsEnum, IsOptional } from 'class-validator';
 
 export class CreateBarcodeScanEventDto implements ICreateBarcodeScanEventDto {
   @ApiProperty()
@@ -36,10 +42,33 @@ export class CreateBarcodeScanEventDto implements ICreateBarcodeScanEventDto {
   validBatches: string[];
 }
 
-export class CreateQrcodeScanEventDto implements ICreateScanEventDto {
+class BucketQRDataDto implements BucketQRData {
   @ApiProperty()
   @IsString()
-  scannedCode: string;
+  id: string;
+
+  @ApiProperty()
+  @IsString()
+  componentName: string;
+
+  @ApiProperty()
+  @IsString()
+  componentId: string;
+
+  @ApiProperty()
+  @IsString()
+  creator: string;
+
+  @ApiProperty()
+  @IsString()
+  @IsOptional()
+  location?: string;
+}
+
+export class CreateQrcodeScanEventDto implements ICreateQrcodeScanEventDto {
+  @ApiProperty({ type: BucketQRDataDto })
+  @Type(() => BucketQRDataDto)
+  qrData: BucketQRDataDto;
 
   @ApiProperty()
   @IsString()

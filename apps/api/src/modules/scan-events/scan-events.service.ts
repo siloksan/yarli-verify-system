@@ -1,14 +1,18 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { ScanResult } from '../../../generated/prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { CreateScanEventDto, ScanEventDto } from './dto/create-scan-event.dto';
+import {
+  CreateBarcodeScanEventDto,
+  CreateQrcodeScanEventDto,
+  ScanEventDto,
+} from './dto/create-scan-event.dto';
 import { plainToInstance } from 'class-transformer';
 
 @Injectable()
 export class ScanEventsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async createScanEventBarcode(createScanEventDto: CreateScanEventDto) {
+  async createBarcodeScanEvent(createScanEventDto: CreateBarcodeScanEventDto) {
     const {
       scannedCode,
       orderId,
@@ -61,6 +65,54 @@ export class ScanEventsService {
         scanResult: scanEventData.result,
         scannedComponentName: scannedData.component.name,
         scannedComponentBatch: scannedData.batchNumber,
+      },
+      {
+        excludeExtraneousValues: true,
+      },
+    );
+  }
+
+  async createQrcodeScanEvent(createScanEventDto: CreateQrcodeScanEventDto) {
+    const {
+      orderId,
+      deviceId,
+      operatorId,
+      validBatches,
+      componentName,
+      componentId,
+      qrData,
+    } = createScanEventDto;
+    const scannedData = await this.prisma.component.findFirst({
+      where: { id: qrData.componentId },
+      select: {
+        id: true,
+        componentName: true,
+      },
+    });
+
+    if (!scannedData) {
+      throw new BadRequestException('Сканированный код не распознан');
+    }
+
+    let scanResult = scannedData.component.name === componentName;
+
+    const scanEventData = await this.prisma.scanEvent.create({
+      data: {
+        orderId,
+        componentId,
+        bucketId,
+        result: scanResult ? ScanResult.OK : ScanResult.WRONG,
+        deviceId,
+        operatorId,
+      },
+    });
+
+    return plainToInstance(
+      ScanEventDto,
+      {
+        ...scanEventData,
+        scanResult: scanEventData.result,
+        scannedComponentName: scannedData.component.name,
       },
       {
         excludeExtraneousValues: true,

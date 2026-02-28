@@ -8,7 +8,7 @@ import { plainToInstance } from 'class-transformer';
 
 @Injectable()
 export class FillingBucketActsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService, private readonly scanEventsService: ScanEventsService) {}
 
   async create(createFillingBucketActDto: CreateFillingBucketActDto) {
     const { componentName, componentBarcode, validBatchesId, ...createData } =
@@ -74,6 +74,18 @@ export class FillingBucketActsService {
         },
       },
     });
+
+    const createScanEventDto: CreateBarcodeScanEventDto {
+      orderId,
+      deviceId,
+      operatorId,
+      validBatches,
+      componentName,
+      componentId,
+      qrData,    
+    }
+
+    await scanEventsService.createQrcodeScanEvent(createScanEventDto);
 
     return plainToInstance(
       FillingBucketActResponseDto,
