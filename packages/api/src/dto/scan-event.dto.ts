@@ -10,12 +10,11 @@ export interface ICreateBarcodeScanEventDto {
   validBatches: string[];
 }
 
-export interface ICreateQrcodeScanEventDto {
+export interface ICreateQrCodeScanEventDto {
   qrData: BucketQRData;
-  componentName: string;
-  componentId: string;
+  recipeComponentName: string;
+  recipeComponentId: string;
   orderId: string;
   deviceId: string;
   operatorId: string;
-  validBatches: string[];
 }

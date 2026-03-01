@@ -1,10 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { IScanEventDto } from '@repo/api';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { FillingState } from '../model/machine/filling.types';
+// import { FillingState } from '../model/machine/filling.types';
 
 interface Props {
-  resetScanner: (prevState: FillingState) => void;
+  resetScanner: () => void;
 }
 
 export function ScannerInProgress() {
@@ -95,14 +95,9 @@ export function ComponentScannedSuccess({
 
 interface ScannedErrorProps extends Props {
   message: string;
-  prevState: FillingState;
 }
 
-export function ScannedError({
-  message,
-  resetScanner,
-  prevState,
-}: ScannedErrorProps) {
+export function ScannedError({ message, resetScanner }: ScannedErrorProps) {
   return (
     <View style={styles.modalContent}>
       <View style={styles.errorCard}>
@@ -112,10 +107,7 @@ export function ScannedError({
         </View>
         <Text style={styles.errorText}>{message}</Text>
       </View>
-      <Pressable
-        style={styles.closeButton}
-        onPress={() => resetScanner(prevState)}
-      >
+      <Pressable style={styles.closeButton} onPress={resetScanner}>
         <Text style={styles.closeButtonText}>Сканировать ещё раз</Text>
       </Pressable>
     </View>

@@ -1,5 +1,4 @@
 import { useRef, useState } from 'react';
-import { FillingState } from '../model/machine/filling.types';
 import { useScannerSessionStore } from '@/src/shared/stores';
 import { useModal } from '@/src/shared/modal';
 import {
@@ -8,127 +7,173 @@ import {
   ScannedError,
   ScannerInProgress,
 } from '../ui/ScannerModalChildren';
-import { FillingMachine } from '../model/machine/filling.machine';
 import {
-  getBucketScanState,
-  getComponentScanState,
+  validateBucket,
+  validateComponent,
 } from '../model/services/filling.service';
-import { ICreateFillingActBucketDto, ScannerRequestPayload } from '@repo/api';
-
-type HandleScan = (event: { data: string }) => void;
+import { transition } from '../model/machine/filling.transition';
+import { FillingEffect } from '../model/machine/filling.effects';
+import { FillingState } from '../model/machine/filling.state';
+import { FillingEvent } from '../model/machine/filling.types';
 
 export function useFilling() {
+  const [state, setState] = useState<FillingState>({ step: 'SCAN_BUCKET' });
+  const stateRef = useRef<FillingState>({ step: 'SCAN_BUCKET' });
   const isScanningRef = useRef(false);
-  const [state, setState] = useState<FillingState>(FillingMachine.initial());
   const { showModal, hideModal } = useModal();
   const request = useScannerSessionStore((s) => s.request);
-  console.log('request: ', request);
-  // const isScannerModeAvailable = state.step === 'scan_bucket' || state.step === 'bucket_completed' || state.step === 'error'
-  const turnOnScanner = () => {
-    isScanningRef.current = false;
+
+  if (!request || request.type !== 'FILLING_BUCKET_ACT') return null;
+
+  const isScannerModeAvailable =
+    state.step === 'BUCKET_COMPLETED' || state.step === 'ERROR';
+
+  const setMachineState = (nextState: FillingState) => {
+    stateRef.current = nextState;
+    setState(nextState);
   };
 
-  const resetScanner = (prevState: FillingState) => {
+  const closeAndUnlockScanner = () => {
     isScanningRef.current = false;
-    setState(prevState);
     hideModal();
   };
 
-  if (request?.type !== 'FILLING_BUCKET_ACT') {
-    return null;
-  }
+  const dispatchEvent = async (event: FillingEvent) => {
+    const { state: nextState, effects } = transition(stateRef.current, event);
 
-  const { payload: requestPayload } = request;
+    setMachineState(nextState);
 
-  const handleScan: HandleScan = async ({ data }) => {
-    if (isScanningRef.current) return;
-    console.log('scan');
-    isScanningRef.current = true;
-    showModal(<ScannerInProgress />);
+    for (const effect of effects) {
+      await handleEffect(effect);
+    }
+  };
 
-    if (state.step === 'scan_bucket') {
-      const resultValidation = getBucketScanState(
-        data,
-        requestPayload.componentName,
-      );
+  const handleEffect = async (effect: FillingEffect) => {
+    switch (effect.type) {
+      case 'SHOW_SCANNER_PROGRESS':
+        showModal(<ScannerInProgress />);
+        break;
 
-      if (resultValidation.step === 'error') {
-        showModal(
-          <ScannedError
-            resetScanner={resetScanner}
-            message={resultValidation.message}
-            prevState={state}
-          />,
+      case 'VALIDATE_BUCKET': {
+        const result = validateBucket(
+          effect.qrCode,
+          request.payload.componentName,
         );
-      } else if (resultValidation.step === 'bucket_completed') {
+
+        if (result.success) {
+          await dispatchEvent({
+            type: 'BUCKET_VALIDATION_SUCCESS',
+            bucket: result.bucket,
+          });
+        } else {
+          await dispatchEvent({
+            type: 'BUCKET_VALIDATION_FAILURE',
+            message: result.message,
+          });
+        }
+        break;
+      }
+
+      case 'SHOW_BUCKET_SUCCESS':
         showModal(
           <BucketScannedSuccess
-            turnOnScanner={turnOnScanner}
-            componentName={requestPayload.componentName}
+            turnOnScanner={closeAndUnlockScanner}
+            componentName={effect.bucket.componentName ?? ''}
           />,
         );
-      }
+        break;
 
-      setState(resultValidation);
-    }
-
-    if (state.step === 'bucket_completed') {
-      const createScanEventData = getCreateScanEventData(
-        requestPayload,
-        state.bucket.id,
-        data,
-      );
-
-      const resultValidation = await getComponentScanState(
-        createScanEventData,
-        state.bucket,
-      );
-      if (resultValidation.step === 'error') {
+      case 'SHOW_BUCKET_ERROR':
+      case 'SHOW_COMPONENT_ERROR':
         showModal(
           <ScannedError
-            resetScanner={resetScanner}
-            message={resultValidation.message}
-            prevState={state}
+            resetScanner={() => {
+              closeAndUnlockScanner();
+              dispatchEvent({ type: 'RESET_ERROR' });
+            }}
+            message={effect.message}
           />,
         );
-      } else if (resultValidation.step === 'scan_completed') {
-        console.log('resultValidation: ', resultValidation);
+        break;
+
+      case 'VALIDATE_COMPONENT': {
+        const result = await validateComponent({
+          bucketId: effect.bucket.id,
+          orderId: request.payload.orderId,
+          validBatchesId: request.payload.validBatches,
+          recipeComponentId: request.payload.componentId,
+          recipeComponentName: request.payload.componentName,
+          componentBarcode: effect.barCode,
+          workerName: 'РРІР°РЅ РРІР°РЅРѕРІРёС‡ РРІР°РЅРѕРІ',
+          weight: null,
+        });
+
+        if (result.success) {
+          await dispatchEvent({
+            type: 'COMPONENT_VALIDATION_SUCCESS',
+            fillingAct: result.fillingAct,
+          });
+        } else {
+          await dispatchEvent({
+            type: 'COMPONENT_VALIDATION_FAILURE',
+            message: result.message,
+          });
+        }
+        break;
+      }
+
+      case 'SHOW_COMPONENT_SUCCESS':
         showModal(
           <ComponentScannedSuccess
-            componentName={resultValidation.fillingAct.componentName}
-            scannedComponentBatch={resultValidation.fillingAct.componentBatch}
+            componentName={effect.fillingAct.componentName}
+            scannedComponentBatch={effect.fillingAct.componentBatch}
           />,
         );
-      }
-      setState(resultValidation);
+        break;
+
+      default:
+        break;
     }
   };
 
-  return { state, handleScan, turnOnScanner, request };
-}
+  const handleScan = async ({ data }: { data: string }) => {
+    if (isScanningRef.current) return;
 
-function getCreateScanEventData(
-  request: ScannerRequestPayload,
-  bucketId: string,
-  code: string,
-): ICreateFillingActBucketDto {
+    const currentStep = stateRef.current.step;
+    if (currentStep !== 'SCAN_BUCKET' && currentStep !== 'BUCKET_COMPLETED') {
+      return;
+    }
+
+    isScanningRef.current = true;
+
+    if (currentStep === 'SCAN_BUCKET') {
+      await dispatchEvent({ type: 'SCAN_BUCKET', qrCode: data });
+      return;
+    }
+
+    await dispatchEvent({ type: 'SCAN_COMPONENT', barCode: data });
+  };
+
+  const handleBottomReset = () => {
+    const currentStep = stateRef.current.step;
+    console.log('currentStep: ', currentStep);
+
+    if (currentStep === 'BUCKET_COMPLETED') {
+      closeAndUnlockScanner();
+      return;
+    }
+
+    if (currentStep === 'ERROR') {
+      closeAndUnlockScanner();
+      void dispatchEvent({ type: 'RESET_ERROR' });
+    }
+  };
+
   return {
-    bucketId,
-    orderId: request.orderId,
-    validBatchesId: request.validBatches,
-    componentId: request.componentId,
-    componentName: request.componentName,
-    componentBarcode: code,
-    workerName: 'Иван Иванович Иванов',
-    weight: null,
+    state,
+    handleScan,
+    isScannerModeAvailable,
+    request,
+    handleBottomReset,
   };
 }
-// const result = await validateCode({
-//   scannedCode: event.data,
-//   orderId,
-//   componentId,
-//   componentName,
-//   validBatches,
-//   deviceId: 'scanner-mobile',
-//   operatorId: 'Иван Иванович Иванов',
-// });

@@ -5,8 +5,8 @@ export interface ICreateFillingActBucketDto {
   orderId: string;
   validBatchesId: string[];
   componentBarcode: string;
-  componentId: string;
-  componentName: string;
+  recipeComponentId: string;
+  recipeComponentName: string;
 }
 
 export interface IFillingActBucketResponseDto {

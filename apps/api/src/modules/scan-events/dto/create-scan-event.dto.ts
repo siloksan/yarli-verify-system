@@ -3,7 +3,7 @@ import {
   ICreateBarcodeScanEventDto,
   IScanEventDto,
   ScanResult,
-  ICreateQrcodeScanEventDto,
+  ICreateQrCodeScanEventDto,
   BucketQRData,
 } from '@repo/api';
 import { Expose, Type } from 'class-transformer';
@@ -65,7 +65,7 @@ class BucketQRDataDto implements BucketQRData {
   location?: string;
 }
 
-export class CreateQrcodeScanEventDto implements ICreateQrcodeScanEventDto {
+export class CreateQrCodeScanEventDto implements ICreateQrCodeScanEventDto {
   @ApiProperty({ type: BucketQRDataDto })
   @Type(() => BucketQRDataDto)
   qrData: BucketQRDataDto;
@@ -76,11 +76,11 @@ export class CreateQrcodeScanEventDto implements ICreateQrcodeScanEventDto {
 
   @ApiProperty()
   @IsString()
-  componentName: string;
+  recipeComponentName: string;
 
   @ApiProperty()
   @IsString()
-  componentId: string;
+  recipeComponentId: string;
 
   @ApiProperty()
   @IsString()
@@ -89,13 +89,6 @@ export class CreateQrcodeScanEventDto implements ICreateQrcodeScanEventDto {
   @ApiProperty()
   @IsString()
   operatorId: string;
-
-  @ApiProperty({
-    type: [String],
-  })
-  @IsArray()
-  @IsString({ each: true })
-  validBatches: string[];
 }
 
 export class ScanEventDto implements IScanEventDto {
@@ -116,6 +109,7 @@ export class ScanEventDto implements IScanEventDto {
 
   @ApiProperty()
   @IsString()
+  @IsOptional()
   @Expose()
   scannedComponentBatch: string;
 

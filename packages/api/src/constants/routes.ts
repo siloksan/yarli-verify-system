@@ -10,6 +10,10 @@ export const API_ROUTES = {
   batches: 'batches',
   components: 'components',
   orders: 'orders',
-  scan_events: 'scan-events',
+  SCAN_EVENTS: {
+    root: 'scan-events',
+    barcode: 'barcode',
+    qrCode: 'qrcode',
+  },
   filling_act_buckets: 'filling-act-buckets',
 } as const;

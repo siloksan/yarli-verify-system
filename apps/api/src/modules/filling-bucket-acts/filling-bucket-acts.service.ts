@@ -1,20 +1,32 @@
-п»їimport { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import {
   CreateFillingBucketActDto,
   FillingBucketActResponseDto,
 } from './dto/create-filling-bucket-act.dto';
 import { plainToInstance } from 'class-transformer';
+import { ScanResult } from '@repo/api';
 
 @Injectable()
 export class FillingBucketActsService {
-  constructor(private readonly prisma: PrismaService, private readonly scanEventsService: ScanEventsService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async create(createFillingBucketActDto: CreateFillingBucketActDto) {
-    const { componentName, componentBarcode, validBatchesId, ...createData } =
-      createFillingBucketActDto;
+    const {
+      orderId,
+      recipeComponentId,
+      recipeComponentName,
+      componentBarcode,
+      validBatchesId,
+      workerName,
+      ...createData
+    } = createFillingBucketActDto;
 
-    const batch = await this.prisma.componentBatch.findUnique({
+    const scannedBatch = await this.prisma.componentBatch.findUnique({
       where: {
         barcode: componentBarcode,
       },
@@ -30,74 +42,100 @@ export class FillingBucketActsService {
       },
     });
     console.log('createFillingBucketActDto: ', createFillingBucketActDto);
-    console.log('batch: ', batch);
+    console.log('scannedBatch: ', scannedBatch);
 
-    if (!batch) {
-      throw new NotFoundException('РљРѕРјРїРѕРЅРµРЅС‚ РЅРµ РЅР°Р№РґРµРЅ РІ СЃРёСЃС‚РµРјРµ');
+    if (!scannedBatch) {
+      throw new NotFoundException('Компонент не найден в системе');
     }
-    // componentId in createFillingBucketActDto !== batch.component.id, createFillingBucketActDto orderDto data
-    if (batch.component.name !== componentName) {
+
+    const scanResult = scannedBatch.component.name === recipeComponentName;
+    if (!scanResult) {
       throw new NotFoundException(
-        `РЎРєР°РЅРёСЂРѕРІР°РЅ ${batch.component.name}, РѕР¶РёРґР°Р»СЃСЏ ${componentName}`,
+        `Сканирован ${scannedBatch.component.name}, ожидался ${recipeComponentName}`,
       );
     }
 
-    if (validBatchesId.length > 0 && !validBatchesId.includes(batch.id)) {
+    if (
+      validBatchesId.length > 0 &&
+      !validBatchesId.includes(scannedBatch.id)
+    ) {
+      await this.prisma.scanEvent.create({
+        data: {
+          orderId,
+          componentId: recipeComponentId,
+          batchId: scannedBatch.id,
+          scannedCode: componentBarcode,
+          result: ScanResult.WRONG,
+          deviceId: 'tutel_phone',
+          operatorId: workerName,
+        },
+      });
+
       throw new NotFoundException(
-        `РЎРєР°РЅРёСЂРѕРІР°РЅР° РЅРµСЂР°Р·СЂРµС€С‘РЅРЅР°СЏ РїР°СЂС‚РёСЏ ${batch.batchNumber}`,
+        `Сканирована неразрешённая партия ${scannedBatch.batchNumber}`,
       );
     }
-    
-    const createdAct = await this.prisma.fillingActBucket.create({
-      data: {
-        ...createData,
-        componentId: batch.component.id,
-        batchId: batch.id,
-      },
-      select: {
-        id: true,
-        workerName: true,
-        weight: true,
-        createdAt: true,
-        bucketId: true,
-        componentId: true,
-        orderId: true,
-        component: {
-          select: {
-            name: true,
-          },
-        },
-        batch: {
-          select: {
-            batchNumber: true,
-          },
-        },
-      },
-    });
 
-    const createScanEventDto: CreateBarcodeScanEventDto {
-      orderId,
-      deviceId,
-      operatorId,
-      validBatches,
-      componentName,
-      componentId,
-      qrData,    
+    try {
+      const createdAct = await this.prisma.$transaction(async (tx) => {
+        const act = await tx.fillingActBucket.create({
+          data: {
+            ...createData,
+            workerName,
+            orderId,
+            componentId: scannedBatch.component.id,
+            batchId: scannedBatch.id,
+          },
+          select: {
+            id: true,
+            workerName: true,
+            weight: true,
+            createdAt: true,
+            bucketId: true,
+            componentId: true,
+            orderId: true,
+            component: {
+              select: {
+                name: true,
+              },
+            },
+            batch: {
+              select: {
+                batchNumber: true,
+              },
+            },
+          },
+        });
+
+        await tx.scanEvent.create({
+          data: {
+            orderId,
+            componentId: recipeComponentId,
+            batchId: scannedBatch.id,
+            scannedCode: componentBarcode,
+            result: ScanResult.OK,
+            deviceId: 'tutel_phone',
+            operatorId: workerName,
+          },
+        });
+
+        return act;
+      });
+
+      return plainToInstance(
+        FillingBucketActResponseDto,
+        {
+          ...createdAct,
+          componentName: createdAct.component.name,
+          componentBatch: createdAct.batch.batchNumber,
+        },
+        {
+          excludeExtraneousValues: true,
+        },
+      );
+    } catch (error) {
+      throw new InternalServerErrorException('Не удалось создать акт фасовки');
     }
-
-    await scanEventsService.createQrcodeScanEvent(createScanEventDto);
-
-    return plainToInstance(
-      FillingBucketActResponseDto,
-      {
-        ...createdAct,
-        componentName: createdAct.component.name,
-        componentBatch: createdAct.batch.batchNumber,
-      },
-      {
-        excludeExtraneousValues: true,
-      },
-    );
   }
 
   async findAll() {
@@ -163,3 +201,4 @@ export class FillingBucketActsService {
     });
   }
 }
+

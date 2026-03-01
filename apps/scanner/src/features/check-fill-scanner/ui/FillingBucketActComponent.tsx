@@ -40,7 +40,13 @@ export function FillingBucketActComponent() {
   const filling = useFilling();
   if (!filling) return null;
 
-  const { state, handleScan, turnOnScanner, request } = filling;
+  const {
+    state,
+    handleScan,
+    request,
+    isScannerModeAvailable,
+    handleBottomReset,
+  } = filling;
 
   // const sendResultToWeb = (response: AppToWebMessage) => {
   //   if (!webViewRef) return;
@@ -92,16 +98,15 @@ export function FillingBucketActComponent() {
               : 'No batch restrictions'}
           </Text>
         </View>
-        {
-          state.step === 'scan_bucket' ? (
-            <Pressable style={styles.resetButton} onPress={showInstruction}>
-              <Text style={styles.resetButtonText}>Инструкция пользования</Text>
-            </Pressable>
-          ) : null
-          // <Pressable style={styles.resetButton} onPress={resetScan}>
-          //   <Text style={styles.resetButtonText}>Сканировать заново</Text>
-          // </Pressable>
-        }
+        {isScannerModeAvailable ? (
+          <Pressable style={styles.resetButton} onPress={handleBottomReset}>
+            <Text style={styles.resetButtonText}>Сканировать заново</Text>
+          </Pressable>
+        ) : (
+          <Pressable style={styles.resetButton} onPress={showInstruction}>
+            <Text style={styles.resetButtonText}>Инструкция использования</Text>
+          </Pressable>
+        )}
       </View>
     </SafeAreaView>
   );

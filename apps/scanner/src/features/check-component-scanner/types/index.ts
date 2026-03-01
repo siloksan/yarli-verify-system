@@ -3,7 +3,7 @@ import { ScanResult } from '@repo/api';
 export type ValidationResultState = {
   scanResult: ScanResult;
   scannedComponentName: string;
-  scannedComponentBatch: string;
+  scannedComponentBatch?: string;
 };
 
 export type ScannerState =

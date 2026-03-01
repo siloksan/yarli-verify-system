@@ -46,11 +46,11 @@ export class CreateFillingBucketActDto implements ICreateFillingActBucketDto {
 
   @ApiProperty()
   @IsString()
-  componentId: string;
+  recipeComponentId: string;
 
   @ApiProperty()
   @IsString()
-  componentName: string;
+  recipeComponentName: string;
 }
 
 export class FillingBucketActResponseDto implements IFillingActBucketResponseDto {

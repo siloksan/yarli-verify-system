@@ -3,7 +3,7 @@ import { ScanResult } from '../../../generated/prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import {
   CreateBarcodeScanEventDto,
-  CreateQrcodeScanEventDto,
+  CreateQrCodeScanEventDto,
   ScanEventDto,
 } from './dto/create-scan-event.dto';
 import { plainToInstance } from 'class-transformer';
@@ -37,12 +37,12 @@ export class ScanEventsService {
     });
 
     if (!scannedData) {
-      throw new BadRequestException('Scanned code is not recognized');
+      throw new BadRequestException('Компонент не найден в системе');
     }
 
     let scanResult = scannedData.component.name === componentName;
 
-    if (scanResult && validBatches.length > 0) {
+    if (validBatches.length > 0) {
       scanResult = validBatches.includes(scannedData.batchNumber);
     }
 
@@ -72,21 +72,20 @@ export class ScanEventsService {
     );
   }
 
-  async createQrcodeScanEvent(createScanEventDto: CreateQrcodeScanEventDto) {
+  async createQrCodeScanEvent(createScanEventDto: CreateQrCodeScanEventDto) {
     const {
       orderId,
       deviceId,
       operatorId,
-      validBatches,
-      componentName,
-      componentId,
+      recipeComponentId,
+      recipeComponentName,
       qrData,
     } = createScanEventDto;
     const scannedData = await this.prisma.component.findFirst({
       where: { id: qrData.componentId },
       select: {
         id: true,
-        componentName: true,
+        name: true,
       },
     });
 
@@ -94,13 +93,13 @@ export class ScanEventsService {
       throw new BadRequestException('Сканированный код не распознан');
     }
 
-    let scanResult = scannedData.component.name === componentName;
+    const scanResult = scannedData.name === recipeComponentName;
 
     const scanEventData = await this.prisma.scanEvent.create({
       data: {
         orderId,
-        componentId,
-        bucketId,
+        componentId: recipeComponentId,
+        bucketId: qrData.id,
         result: scanResult ? ScanResult.OK : ScanResult.WRONG,
         deviceId,
         operatorId,
@@ -112,7 +111,7 @@ export class ScanEventsService {
       {
         ...scanEventData,
         scanResult: scanEventData.result,
-        scannedComponentName: scannedData.component.name,
+        scannedComponentName: scannedData.name,
       },
       {
         excludeExtraneousValues: true,

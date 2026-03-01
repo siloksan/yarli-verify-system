@@ -58,7 +58,8 @@ export function useScannerValidation(
         return;
       }
 
-      const { orderId, componentId, componentName, validBatches } = request;
+      const { orderId, componentId, componentName, validBatches } =
+        request.payload;
       setStateAndUpdateModal({ status: 'validating', data: event.data });
 
       try {

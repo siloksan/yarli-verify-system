@@ -4,7 +4,6 @@ import { FillingBucketActsController } from './filling-bucket-acts.controller';
 
 @Module({
   controllers: [FillingBucketActsController],
-  import: [ScanEventsModule],
   providers: [FillingBucketActsService],
 })
 export class FillingBucketActsModule {}

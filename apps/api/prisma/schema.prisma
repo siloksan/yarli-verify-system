@@ -96,7 +96,7 @@ model ScanEvent {
   order     ProductionOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
   component RecipeComponent @relation(fields: [componentId], references: [id], onDelete: Cascade)
   batch     ComponentBatch? @relation(fields: [batchId], references: [id], onDelete: SetNull)
-  bucket     ComponentBatch? @relation(fields: [bucketId], references: [id], onDelete: SetNull)
+  bucket     Bucket? @relation(fields: [bucketId], references: [id], onDelete: SetNull)
   
   @@index([orderId])
   @@index([componentId])
