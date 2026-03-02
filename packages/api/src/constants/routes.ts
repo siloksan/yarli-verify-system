@@ -1,6 +1,7 @@
 export const SCANNER_ROUTES = {
   scanner_check: 'scanner/check',
   scanner_check_and_fill: 'scanner/check-and-fill',
+  scanner_fill_container: 'scanner/fill-container',
 } as const;
 
 export type ScannerRoutes =

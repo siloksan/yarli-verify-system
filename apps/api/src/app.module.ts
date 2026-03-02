@@ -12,6 +12,7 @@ import { BatchesModule } from './modules/batches/batches.module';
 import { ScanEventsModule } from './modules/scan-events/scan-events.module';
 import { BucketsModule } from './modules/buckets/buckets.module';
 import { FillingBucketActsModule } from './modules/filling-bucket-acts/filling-bucket-acts.module';
+import { TelegramBotModule } from './modules/telegram-bot/telegram-bot.module';
 
 @Module({
   imports: [
@@ -45,6 +46,7 @@ import { FillingBucketActsModule } from './modules/filling-bucket-acts/filling-b
     ScanEventsModule,
     BucketsModule,
     FillingBucketActsModule,
+    TelegramBotModule,
   ],
   controllers: [AppController],
   providers: [AppService],

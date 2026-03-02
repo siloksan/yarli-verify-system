@@ -2,6 +2,8 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   ICreateFillingActBucketDto,
   IFillingActBucketResponseDto,
+  ICreateFillingContainerActDto,
+  IFillingContainerActResponseDto,
 } from '@repo/api';
 import { Expose } from 'class-transformer';
 import {
@@ -97,6 +99,64 @@ export class FillingBucketActResponseDto implements IFillingActBucketResponseDto
   @IsString()
   @Expose()
   orderId: string;
+
+  @ApiProperty({
+    description: 'Creation date in ISO 8601 format',
+    example: '2024-01-15T10:30:00.000Z',
+    type: String,
+  })
+  @IsDateString()
+  @Expose()
+  createdAt: string;
+}
+
+export class CreateFillingContainerAct implements ICreateFillingContainerActDto {
+  @ApiProperty()
+  @IsString()
+  workerName: string;
+
+  @ApiProperty()
+  @IsString()
+  componentBarcode: string;
+
+  @ApiPropertyOptional({
+    nullable: true,
+    type: String,
+  })
+  @IsOptional()
+  @IsDecimal()
+  weight: string | null;
+}
+
+export class FillingContainerActResponseDto implements IFillingContainerActResponseDto {
+  @ApiProperty()
+  @IsString()
+  @Expose()
+  id: string;
+
+  @ApiProperty()
+  @IsString()
+  @Expose()
+  componentName: string;
+
+  @ApiProperty()
+  @IsString()
+  @Expose()
+  componentBatchNumber: string;
+
+  @ApiProperty()
+  @IsString()
+  @Expose()
+  workerName: string;
+
+  @ApiPropertyOptional({
+    nullable: true,
+    type: String,
+  })
+  @IsOptional()
+  @IsString()
+  @Expose()
+  weight: string | null;
 
   @ApiProperty({
     description: 'Creation date in ISO 8601 format',

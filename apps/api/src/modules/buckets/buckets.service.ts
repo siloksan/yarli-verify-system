@@ -29,7 +29,6 @@ export class BucketsService {
         },
       },
     });
-    console.log('bucket: ', bucket);
 
     return plainToInstance(BucketResponseDto, bucket, {
       excludeExtraneousValues: true,
@@ -78,6 +77,19 @@ export class BucketsService {
     const bucket = await this.prisma.bucket.findUnique({
       where: {
         id,
+      },
+      select: {
+        id: true,
+        createdAt: true,
+        creator: true,
+        location: true,
+        updatedAt: true,
+        component: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
     });
 

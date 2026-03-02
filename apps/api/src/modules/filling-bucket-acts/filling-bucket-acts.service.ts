@@ -6,14 +6,21 @@ import {
 import { PrismaService } from '../../common/prisma/prisma.service';
 import {
   CreateFillingBucketActDto,
+  CreateFillingContainerAct,
   FillingBucketActResponseDto,
+  FillingContainerActResponseDto,
 } from './dto/create-filling-bucket-act.dto';
 import { plainToInstance } from 'class-transformer';
 import { ScanResult } from '@repo/api';
+import { TelegramBotService } from '../telegram-bot/telegram-bot.service';
+import { workerData } from 'worker_threads';
 
 @Injectable()
 export class FillingBucketActsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly telegramBotService: TelegramBotService,
+  ) {}
 
   async create(createFillingBucketActDto: CreateFillingBucketActDto) {
     const {
@@ -45,13 +52,13 @@ export class FillingBucketActsService {
     console.log('scannedBatch: ', scannedBatch);
 
     if (!scannedBatch) {
-      throw new NotFoundException('Компонент не найден в системе');
+      throw new NotFoundException('пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ');
     }
 
     const scanResult = scannedBatch.component.name === recipeComponentName;
     if (!scanResult) {
       throw new NotFoundException(
-        `Сканирован ${scannedBatch.component.name}, ожидался ${recipeComponentName}`,
+        `пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ ${scannedBatch.component.name}, пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ ${recipeComponentName}`,
       );
     }
 
@@ -59,7 +66,7 @@ export class FillingBucketActsService {
       validBatchesId.length > 0 &&
       !validBatchesId.includes(scannedBatch.id)
     ) {
-      await this.prisma.scanEvent.create({
+      const scanEvent = await this.prisma.scanEvent.create({
         data: {
           orderId,
           componentId: recipeComponentId,
@@ -71,8 +78,10 @@ export class FillingBucketActsService {
         },
       });
 
+      void this.telegramBotService.handleScanEventCreated(scanEvent.id);
+
       throw new NotFoundException(
-        `Сканирована неразрешённая партия ${scannedBatch.batchNumber}`,
+        `РЎРєР°РЅРёСЂРѕРІР°РЅ ${recipeComponentName} РЅРµ РІРµСЂРЅРѕР№ РїР°СЂС‚РёРё: ${scannedBatch.batchNumber}`,
       );
     }
 
@@ -107,7 +116,7 @@ export class FillingBucketActsService {
           },
         });
 
-        await tx.scanEvent.create({
+        const scanEvent = await tx.scanEvent.create({
           data: {
             orderId,
             componentId: recipeComponentId,
@@ -118,24 +127,120 @@ export class FillingBucketActsService {
             operatorId: workerName,
           },
         });
+        console.log('scanEvent: ', scanEvent);
 
-        return act;
+        return { act, scanEvent };
       });
+
+      if (createdAct.scanEvent.result === 'WRONG') {
+        void this.telegramBotService.handleScanEventCreated(
+          createdAct.scanEvent.id,
+        );
+      }
 
       return plainToInstance(
         FillingBucketActResponseDto,
         {
           ...createdAct,
-          componentName: createdAct.component.name,
-          componentBatch: createdAct.batch.batchNumber,
+          componentName: createdAct.act.component.name,
+          componentBatch: createdAct.act.batch.batchNumber,
         },
         {
           excludeExtraneousValues: true,
         },
       );
     } catch (error) {
-      throw new InternalServerErrorException('Не удалось создать акт фасовки');
+      console.log('error: ', error);
+      throw new InternalServerErrorException('пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ');
     }
+  }
+
+  async createFillContainerAct(
+    bucketId: string,
+    createFillingContainerAct: CreateFillingContainerAct,
+  ) {
+    const { componentBarcode, ...createData } = createFillingContainerAct;
+
+    const scannedBatch = await this.prisma.componentBatch.findUnique({
+      where: {
+        barcode: componentBarcode,
+      },
+      select: {
+        id: true,
+        component: {
+          select: {
+            name: true,
+            id: true,
+          },
+        },
+      },
+    });
+
+    if (!scannedBatch) {
+      throw new NotFoundException('РљРѕРјРїРѕРЅРµРЅС‚Р° РЅРµ РЅР°Р№РґРµРЅ РІ СЃРёСЃС‚РµРјРµ');
+    }
+
+    const bucketData = await this.prisma.bucket.findUnique({
+      where: {
+        id: bucketId,
+      },
+      select: {
+        component: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+    console.log('scannedBatch: ', scannedBatch);
+
+    if (scannedBatch.component.id !== bucketData.component.id) {
+      throw new NotFoundException(
+        `РћР±РЅР°СЂСѓР¶РµРЅРѕ РЅРµ СЃРѕРѕС‚РІРµС‚СЃС‚РІРёРµ: С‘РјРєРѕСЃС‚СЊ РёР· РїРѕРґ ${bucketData.component.name} РЅРµ РїРѕРґС…РѕРґРёС‚ РґР»СЏ Р·Р°РїРѕР»РЅРµРЅРёСЏ ${scannedBatch.component.name}`,
+      );
+    }
+
+    const fillAct = await this.prisma.fillingActBucket.create({
+      data: {
+        bucketId,
+        batchId: scannedBatch.id,
+        componentId: bucketData.component.id,
+        validBatchesId: [],
+        ...createData,
+      },
+      select: {
+        id: true,
+        workerName: true,
+        weight: true,
+        createdAt: true,
+        component: {
+          select: {
+            name: true,
+          },
+        },
+        batch: {
+          select: {
+            batchNumber: true,
+          },
+        },
+      },
+    });
+
+    return plainToInstance(
+      FillingContainerActResponseDto,
+      {
+        id: fillAct.id,
+        workerName: fillAct.workerName,
+        weight: fillAct.weight,
+        componentName: fillAct.component.name,
+        componentBatchNumber: fillAct.batch.batchNumber,
+        createAt: fillAct.createdAt,
+      },
+      {
+        excludeExtraneousValues: true,
+      },
+    );
   }
 
   async findAll() {
@@ -201,4 +306,3 @@ export class FillingBucketActsService {
     });
   }
 }
-

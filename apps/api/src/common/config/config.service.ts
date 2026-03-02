@@ -31,4 +31,8 @@ export class ConfigService {
   getSwaggerConfig() {
     return this.get<Config['swagger']>('swagger');
   }
+
+  getTelegramConfig() {
+    return this.get<Config['telegram']>('telegram');
+  }
 }

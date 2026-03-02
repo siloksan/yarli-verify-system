@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { IScanEventDto, ScanResult } from '@repo/api';
+import { IScanEvent, ScanResult } from '@repo/api';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { ScannerState } from '../types';
 import { CameraInstructions } from './CameraInstructions';
@@ -8,7 +8,7 @@ interface Props {
   state: ScannerState;
   validationError: string | null;
   scanData: string | null | undefined;
-  validationResult: Omit<IScanEventDto, 'id' | 'orderId'> | null;
+  validationResult: Omit<IScanEvent, 'id' | 'orderId'> | null;
   hideModal: () => void;
 }
 

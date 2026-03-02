@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
   ICreateBarcodeScanEventDto,
-  IScanEventDto,
+  IScanEvent,
   ScanResult,
   ICreateQrCodeScanEventDto,
   BucketQRData,
@@ -91,7 +91,7 @@ export class CreateQrCodeScanEventDto implements ICreateQrCodeScanEventDto {
   operatorId: string;
 }
 
-export class ScanEventDto implements IScanEventDto {
+export class ScanEventDto implements IScanEvent {
   @ApiProperty()
   @IsString()
   @Expose()

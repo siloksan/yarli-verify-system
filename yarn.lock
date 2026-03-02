@@ -5805,6 +5805,7 @@ __metadata:
     "@nestjs/common": "npm:^11.1.11"
     "@nestjs/config": "npm:^4.0.3"
     "@nestjs/core": "npm:^11.1.11"
+    "@nestjs/mapped-types": "npm:*"
     "@nestjs/platform-express": "npm:^11.1.11"
     "@nestjs/schematics": "npm:^11.0.9"
     "@nestjs/swagger": "npm:^11.2.6"

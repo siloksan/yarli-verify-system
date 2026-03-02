@@ -1,6 +1,9 @@
 import { Controller, Get, Post, Body, Param, Delete } from '@nestjs/common';
 import { FillingBucketActsService } from './filling-bucket-acts.service';
-import { CreateFillingBucketActDto } from './dto/create-filling-bucket-act.dto';
+import {
+  CreateFillingBucketActDto,
+  CreateFillingContainerAct,
+} from './dto/create-filling-bucket-act.dto';
 import { API_ROUTES } from '@repo/api';
 
 @Controller(API_ROUTES.filling_act_buckets)
@@ -22,6 +25,17 @@ export class FillingBucketActsController {
   @Get('bucket/:bucketId')
   findByBucketId(@Param('bucketId') bucketId: string) {
     return this.fillingBucketActsService.findByBucketId(bucketId);
+  }
+
+  @Post('bucket/:bucketId')
+  createFillContainerAct(
+    @Param('bucketId') bucketId: string,
+    @Body() createFillingContainerAct: CreateFillingContainerAct,
+  ) {
+    return this.fillingBucketActsService.createFillContainerAct(
+      bucketId,
+      createFillingContainerAct,
+    );
   }
 
   @Get(':id')

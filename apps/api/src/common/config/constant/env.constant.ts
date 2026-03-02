@@ -18,4 +18,9 @@ export const ENV_CONFIG_DEVELOPMENT = {
     path: process.env.API_DOC_PATH as Config['swagger']['path'],
     openApiVersion: process.env.OPEN_API_VERSION || '1.0.0',
   },
-};
+  telegram: {
+    enabled: process.env.TELEGRAM_ENABLED === 'true',
+    botToken: process.env.TELEGRAM_BOT_TOKEN,
+    chatId: process.env.TELEGRAM_CHAT_ID,
+  },
+} as const;

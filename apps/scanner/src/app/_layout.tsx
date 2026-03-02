@@ -29,6 +29,10 @@ export function RootLayout() {
         options={{ title: 'Сканирование и заполнение' }}
       />
       <Stack.Screen
+        name={SCANNER_ROUTES.scanner_fill_container}
+        options={{ title: 'Сканирование и заполнение' }}
+      />
+      <Stack.Screen
         name="order-recipe/index"
         options={{ title: 'Рецептура заказа' }}
       />

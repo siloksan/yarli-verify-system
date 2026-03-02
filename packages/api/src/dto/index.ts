@@ -20,12 +20,13 @@ export enum ScanResult {
   WRONG = 'WRONG',
 }
 
-export interface IScanEvent {
+export interface IScanEventDto {
   id: string;
   batchId: string;
   result: ScanResult;
   deviceId: string;
   operatorId: string;
+  scannedComponentName: string;
   scannedComponentBatch?: string;
 }
 
@@ -64,7 +65,7 @@ export interface IBatchDto {
   code: string;
 }
 
-export interface IScanEventDto {
+export interface IScanEvent {
   id: string;
   orderId: string;
   scannedComponentName: string;

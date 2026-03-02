@@ -7,10 +7,14 @@ import {
   ScanEventDto,
 } from './dto/create-scan-event.dto';
 import { plainToInstance } from 'class-transformer';
+import { TelegramBotService } from '../telegram-bot/telegram-bot.service';
 
 @Injectable()
 export class ScanEventsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly telegramBotService: TelegramBotService,
+  ) {}
 
   async createBarcodeScanEvent(createScanEventDto: CreateBarcodeScanEventDto) {
     const {
@@ -57,6 +61,8 @@ export class ScanEventsService {
         operatorId,
       },
     });
+
+    void this.telegramBotService.handleScanEventCreated(scanEventData.id);
 
     return plainToInstance(
       ScanEventDto,
@@ -105,6 +111,8 @@ export class ScanEventsService {
         operatorId,
       },
     });
+
+    void this.telegramBotService.handleScanEventCreated(scanEventData.id);
 
     return plainToInstance(
       ScanEventDto,

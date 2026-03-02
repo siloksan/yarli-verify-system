@@ -125,13 +125,13 @@ model FillingActBucket {
   batchId         String
   bucketId        String
   componentId     String
-  orderId         String
+  orderId         String?
   validBatchesId  String[]
 
-  batch     ComponentBatch  @relation(fields: [batchId], references: [id], onDelete: Cascade)
-  bucket    Bucket          @relation(fields: [bucketId], references: [id], onDelete: Cascade)
-  component Component       @relation(fields: [componentId], references: [id], onDelete: Restrict)
-  order     ProductionOrder @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  batch     ComponentBatch    @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  bucket    Bucket            @relation(fields: [bucketId], references: [id], onDelete: Cascade)
+  component Component         @relation(fields: [componentId], references: [id], onDelete: Restrict)
+  order     ProductionOrder?  @relation(fields: [orderId], references: [id], onDelete: SetNull)
 
   @@index([bucketId])
   @@index([orderId])

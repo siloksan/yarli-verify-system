@@ -3,11 +3,11 @@ import {
   API_ROUTES,
   HTTP_METHODS,
   type ICreateBarcodeScanEventDto,
-  type IScanEventDto,
+  type IScanEvent,
 } from '@repo/api';
 
 export function validateCode(payload: ICreateBarcodeScanEventDto) {
-  return http<IScanEventDto, ICreateBarcodeScanEventDto>(
+  return http<IScanEvent, ICreateBarcodeScanEventDto>(
     `/${API_ROUTES.SCAN_EVENTS.root}/${API_ROUTES.SCAN_EVENTS.barcode}`,
     {
       method: HTTP_METHODS.POST,

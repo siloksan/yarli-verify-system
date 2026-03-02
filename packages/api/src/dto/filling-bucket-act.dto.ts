@@ -20,3 +20,21 @@ export interface IFillingActBucketResponseDto {
   bucketId: string;
   orderId: string;
 }
+
+// filling act without relation with order
+// fill any container, validate only componentId
+
+export interface ICreateFillingContainerActDto {
+  workerName: string;
+  componentBarcode: string;
+  weight?: string;
+}
+
+export interface IFillingContainerActResponseDto {
+  id: string;
+  workerName: string;
+  weight: string;
+  componentName: string;
+  componentBatchNumber: string;
+  createdAt: string;
+}
