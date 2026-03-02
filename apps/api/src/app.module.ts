@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { LoggerModule } from 'nestjs-pino';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 import { ConfigService } from './common/config/config.service';
 import { ConfigModule } from './common/config/config.module';
@@ -47,6 +48,7 @@ import { TelegramBotModule } from './modules/telegram-bot/telegram-bot.module';
     BucketsModule,
     FillingBucketActsModule,
     TelegramBotModule,
+    EventEmitterModule.forRoot(),
   ],
   controllers: [AppController],
   providers: [AppService],

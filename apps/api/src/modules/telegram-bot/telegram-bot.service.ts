@@ -1,6 +1,8 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { ConfigService } from '../../common/config/config.service';
+import { NotificationService } from 'src/common/notification/notification.interface';
+import { ScanEventWithOrderNotification } from 'src/common/notification/dto/scan-event-notification.dto';
 
 export interface IScanEventBotMessage {
   requireComponentName: string;
@@ -12,7 +14,7 @@ export interface IScanEventBotMessage {
 }
 
 @Injectable()
-export class TelegramBotService implements OnModuleInit {
+export class TelegramBotService implements OnModuleInit, NotificationService {
   private readonly logger = new Logger(TelegramBotService.name);
 
   constructor(
@@ -37,24 +39,56 @@ export class TelegramBotService implements OnModuleInit {
     this.logger.log('Уведомления Telegram включены');
   }
 
-  async notifyWrongScan(event: IScanEventBotMessage) {
-    if (event.scannedComponentName === event.requireComponentName) {
-      return;
+  private escapeTelegramMarkdownV2(payload: ScanEventWithOrderNotification) {
+    for (const key of Object.keys(payload)) {
+      if (typeof payload[key] === 'string') {
+        payload[key] = payload[key].replaceAll(
+          /([_*\[\]()~`>#+\-=|{}.!\\])/g,
+          '\\$1',
+        );
+      } else {
+        payload[key] = '-----';
+      }
     }
 
+    return payload;
+  }
+
+  private formatNetworkError(error: unknown) {
+    if (!(error instanceof Error)) {
+      return 'Неизвестная ошибка Telegram';
+    }
+
+    const cause = (error as Error & { cause?: unknown }).cause;
+    if (!cause) {
+      return error.message;
+    }
+
+    if (cause instanceof Error) {
+      return `${error.message}; причина=${cause.name}: ${cause.message}`;
+    }
+
+    return `${error.message}; причина=${JSON.stringify(cause)}`;
+  }
+
+  async sendWrongScanEvent(
+    payload: ScanEventWithOrderNotification,
+  ): Promise<void> {
     const telegramConfig = this.configService.getTelegramConfig();
+
     if (!telegramConfig.enabled) {
       return;
     }
 
     if (!telegramConfig.botToken || !telegramConfig.chatId) {
-      this.logger.warn(
+      this.logger.error(
         'Уведомления Telegram включены, но отсутствует TELEGRAM_BOT_TOKEN или TELEGRAM_CHAT_ID',
       );
+
       return;
     }
 
-    const message = this.buildWrongScanMessage(event);
+    const message = this.buildWrongScanMessage(payload);
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 10000);
@@ -92,88 +126,16 @@ export class TelegramBotService implements OnModuleInit {
     }
   }
 
-  async handleScanEventCreated(scanEventId: string) {
-    try {
-      const scanEvent = await this.prisma.scanEvent.findUnique({
-        where: { id: scanEventId },
-        select: {
-          operatorId: true,
-          order: {
-            select: {
-              orderNumber: true,
-              label: true,
-            },
-          },
-          component: {
-            select: {
-              componentName: true,
-            },
-          },
-          batch: {
-            select: {
-              batchNumber: true,
-              component: {
-                select: {
-                  name: true,
-                },
-              },
-            },
-          },
-          bucket: {
-            select: {
-              component: {
-                select: {
-                  name: true,
-                },
-              },
-            },
-          },
-        },
-      });
-
-      if (!scanEvent) {
-        this.logger.warn(
-          `Событие сканирования ${scanEventId} не найдено для отправки уведомления`,
-        );
-        return;
-      }
-
-      const scannedComponentName =
-        scanEvent.batch?.component.name ?? scanEvent.bucket?.component.name;
-
-      if (!scannedComponentName) {
-        this.logger.warn(
-          `Событие сканирования ${scanEventId} пропущено: не удалось определить название отсканированного компонента`,
-        );
-        return;
-      }
-
-      await this.notifyWrongScan({
-        requireComponentName: scanEvent.component.componentName,
-        orderName: scanEvent.order.orderNumber,
-        orderBatch: scanEvent.order.label,
-        scannedComponentName,
-        operatorName: scanEvent.operatorId || 'Неизвестный оператор',
-        scannedComponentBatch: scanEvent.batch?.batchNumber || undefined,
-      });
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Неизвестная ошибка слушателя';
-      this.logger.error(
-        `Не удалось обработать событие сканирования ${scanEventId} для Telegram-уведомления: ${errorMessage}`,
-      );
-    }
-  }
-
-  private buildWrongScanMessage(event: IScanEventBotMessage) {
-    const required = this.escapeTelegramMarkdownV2(event.requireComponentName);
-    const scanned = this.escapeTelegramMarkdownV2(event.scannedComponentName);
-    const orderName = this.escapeTelegramMarkdownV2(event.orderName);
-    const orderBatch = this.escapeTelegramMarkdownV2(event.orderBatch);
-    const operator = this.escapeTelegramMarkdownV2(event.operatorName);
-    const scannedBatch = event.scannedComponentBatch
-      ? this.escapeTelegramMarkdownV2(event.scannedComponentBatch)
-      : undefined;
+  private buildWrongScanMessage(payload: ScanEventWithOrderNotification) {
+    const {
+      createdAt,
+      orderBatch,
+      orderName,
+      recipeComponentName,
+      scannedComponentBatch,
+      scannedComponentName,
+      workerName,
+    } = this.escapeTelegramMarkdownV2(payload);
 
     const lines = [
       '🚨 *ОШИБКА СКАНИРОВАНИЯ* 🚨',
@@ -181,44 +143,22 @@ export class TelegramBotService implements OnModuleInit {
       '',
       '⚠️ *Критическое несоответствие*',
       '',
-      `🟢 *Ожидался:* \`${required}\``,
-      `🔴 *Отсканирован:* \`${scanned}\``,
+      `🟢 *Ожидался:* \`${recipeComponentName}\``,
+      `🔴 *Отсканирован:* \`${scannedComponentName}\``,
+      `📌 Партия сканированного компонента: *${scannedComponentBatch}*`
       '',
       '━━━━━━━━━━━━━━━━━━',
       '📦 *Контекст операции*',
       '',
-      `🧾 Заказ: *${orderBatch}*`,
-      `🏷 Партия заказа: *${orderName}*`,
-      `👷 Оператор: *${operator}*`,
+      `🧾 Заказ: *${orderName}*`,
+      `🏷 Партия заказа: *${orderBatch}*`,
+      `👷 Оператор: *${workerName}*`,
+      `⏱ Время сканирования: *${createdAt}*`,
     ];
-
-    if (scannedBatch) {
-      lines.push(`📌 Партия сканированного компонента: *${scannedBatch}*`);
-    }
 
     lines.push('');
     lines.push('❗ *Требуется проверка перед продолжением работы*');
 
     return lines.join('\n');
-  }
-  private escapeTelegramMarkdownV2(value: string) {
-    return value.replace(/([_*\[\]()~`>#+\-=|{}.!\\])/g, '\\$1');
-  }
-
-  private formatNetworkError(error: unknown) {
-    if (!(error instanceof Error)) {
-      return 'Неизвестная ошибка Telegram';
-    }
-
-    const cause = (error as Error & { cause?: unknown }).cause;
-    if (!cause) {
-      return error.message;
-    }
-
-    if (cause instanceof Error) {
-      return `${error.message}; причина=${cause.name}: ${cause.message}`;
-    }
-
-    return `${error.message}; причина=${JSON.stringify(cause)}`;
   }
 }

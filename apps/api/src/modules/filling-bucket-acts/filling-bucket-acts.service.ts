@@ -196,6 +196,8 @@ export class FillingBucketActsService {
     console.log('scannedBatch: ', scannedBatch);
 
     if (scannedBatch.component.id !== bucketData.component.id) {
+      // void this.telegramBotService.handleScanEventCreated(scanEvent.id);
+
       throw new NotFoundException(
         `Обнаружено не соответствие: ёмкость из под ${bucketData.component.name} не подходит для заполнения ${scannedBatch.component.name}`,
       );

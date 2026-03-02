@@ -8,73 +8,85 @@ import {
 } from './dto/create-scan-event.dto';
 import { plainToInstance } from 'class-transformer';
 import { TelegramBotService } from '../telegram-bot/telegram-bot.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { ScanEventCreatedEvent } from './events/scan-event-created.event';
 
 @Injectable()
 export class ScanEventsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly telegramBotService: TelegramBotService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async createBarcodeScanEvent(createScanEventDto: CreateBarcodeScanEventDto) {
-    const {
-      scannedCode,
-      orderId,
-      deviceId,
-      operatorId,
-      validBatches,
-      componentName,
-      componentId,
-    } = createScanEventDto;
+    const events: ScanEventCreatedEvent[] = [];
 
-    const scannedData = await this.prisma.componentBatch.findFirst({
-      where: { barcode: scannedCode },
-      select: {
-        id: true,
-        batchNumber: true,
-        component: {
-          select: {
-            name: true,
-          },
-        },
-      },
-    });
-
-    if (!scannedData) {
-      throw new BadRequestException('Компонент не найден в системе');
-    }
-
-    let scanResult = scannedData.component.name === componentName;
-
-    if (validBatches.length > 0) {
-      scanResult = validBatches.includes(scannedData.batchNumber);
-    }
-
-    const scanEventData = await this.prisma.scanEvent.create({
-      data: {
-        orderId,
-        componentId,
-        batchId: scannedData.id,
+    const result = await this.prisma.$transaction(async (tx) => {
+      const {
         scannedCode,
-        result: scanResult ? ScanResult.OK : ScanResult.WRONG,
+        orderId,
         deviceId,
         operatorId,
-      },
+        validBatches,
+        componentName,
+        componentId,
+      } = createScanEventDto;
+
+      const scannedData = await tx.componentBatch.findFirst({
+        where: { barcode: scannedCode },
+        select: {
+          id: true,
+          batchNumber: true,
+          component: {
+            select: { name: true },
+          },
+        },
+      });
+
+      if (!scannedData) {
+        throw new BadRequestException('Компонент не найден в системе');
+      }
+
+      let scanResult = scannedData.component.name === componentName;
+
+      if (validBatches.length > 0) {
+        scanResult = validBatches.includes(scannedData.batchNumber);
+      }
+
+      const scanEventData = await tx.scanEvent.create({
+        data: {
+          orderId,
+          componentId,
+          batchId: scannedData.id,
+          scannedCode,
+          result: scanResult ? ScanResult.OK : ScanResult.WRONG,
+          deviceId,
+          operatorId,
+        },
+      });
+
+      events.push(new ScanEventCreatedEvent(scanEventData.id));
+
+      return {
+        scanEventData,
+        scannedData,
+      };
     });
 
-    void this.telegramBotService.handleScanEventCreated(scanEventData.id);
+    for (const event of events) {
+      this.eventEmitter.emit('scan-event.created', event);
+    }
 
     return plainToInstance(
       ScanEventDto,
       {
-        ...scanEventData,
-        scanResult: scanEventData.result,
-        scannedComponentName: scannedData.component.name,
-        scannedComponentBatch: scannedData.batchNumber,
+        ...result.scanEventData,
+        scanResult: result.scanEventData.result,
+        scannedComponentName: result.scannedData.component.name,
+        scannedComponentBatch: result.scannedData.batchNumber,
       },
-      {
-        excludeExtraneousValues: true,
-      },
+      { excludeExtraneousValues: true },
     );
   }
 
@@ -112,7 +124,7 @@ export class ScanEventsService {
       },
     });
 
-    void this.telegramBotService.handleScanEventCreated(scanEventData.id);
+    this.telegramBotService.handleScanEventCreated(scanEventData.id);
 
     return plainToInstance(
       ScanEventDto,
