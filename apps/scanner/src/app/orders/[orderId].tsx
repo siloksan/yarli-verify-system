@@ -30,8 +30,7 @@ export default function OrderRecipeWebView() {
   }, [setWebViewRef, webViewKey]);
 
   const setRequest = useScannerSessionStore((s) => s.setRequest);
-  const params = useLocalSearchParams();
-  const orderId = params.orderId;
+  const { orderId } = useLocalSearchParams<{ orderId: string }>();
 
   const sourceUri = useMemo(() => {
     if (!WEB_CLIENT_URL || !orderId) {

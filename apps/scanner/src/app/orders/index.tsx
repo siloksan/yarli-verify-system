@@ -3,6 +3,8 @@ import { WebView } from 'react-native-webview';
 import { WEB_CLIENT_URL } from '@/src/shared/constants/environments.constants';
 import { useRef, useState } from 'react';
 
+const webSourceUrl = `${WEB_CLIENT_URL}/orders`;
+
 export default function MainMenu() {
   const webViewRef = useRef<WebView>(null);
   const [hasError, setHasError] = useState(false);
@@ -14,7 +16,6 @@ export default function MainMenu() {
 
     setHasError(true);
 
-    // Set appropriate error message
     if (nativeEvent.description?.includes('net::ERR_CONNECTION_REFUSED')) {
       setErrorMessage(
         'Не удается подключиться к серверу. Проверьте, запущен ли веб-клиент.',
@@ -68,7 +69,7 @@ export default function MainMenu() {
       <WebView
         ref={webViewRef}
         style={styles.webview}
-        source={{ uri: WEB_CLIENT_URL }}
+        source={{ uri: webSourceUrl }}
         onError={handleError}
         onHttpError={handleError}
         onLoadStart={handleLoadStart}

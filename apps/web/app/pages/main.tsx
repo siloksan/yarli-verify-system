@@ -13,7 +13,7 @@ export default function MainPage() {
 
         <div className="grid gap-3 sm:grid-cols-2">
           <Link
-            to="/orders"
+            to="scanner:///scanner/orders"
             className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition hover:border-gray-300 hover:bg-gray-50"
           >
             <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
