@@ -12,17 +12,20 @@ import {
 } from './dto/create-filling-bucket-act.dto';
 import { plainToInstance } from 'class-transformer';
 import { ScanResult } from '@repo/api';
-import { TelegramBotService } from '../telegram-bot/telegram-bot.service';
-import { workerData } from 'worker_threads';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { ScanEventCreatedEvent } from '../scan-events/events/scan-event-created.event';
+import { EVENTS } from 'src/common/constants/events.constant';
 
 @Injectable()
 export class FillingBucketActsService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly telegramBotService: TelegramBotService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async create(createFillingBucketActDto: CreateFillingBucketActDto) {
+    const events: ScanEventCreatedEvent[] = [];
+
     const {
       orderId,
       recipeComponentId,
@@ -33,60 +36,71 @@ export class FillingBucketActsService {
       ...createData
     } = createFillingBucketActDto;
 
-    const scannedBatch = await this.prisma.componentBatch.findUnique({
-      where: {
-        barcode: componentBarcode,
-      },
-      select: {
-        id: true,
-        batchNumber: true,
-        component: {
-          select: {
-            id: true,
-            name: true,
-          },
+    const createdAct = await this.prisma.$transaction(async (tx) => {
+      const scannedBatch = await tx.componentBatch.findUnique({
+        where: {
+          barcode: componentBarcode,
         },
-      },
-    });
-    console.log('createFillingBucketActDto: ', createFillingBucketActDto);
-    console.log('scannedBatch: ', scannedBatch);
-
-    if (!scannedBatch) {
-      throw new NotFoundException('��������� �� ������ � �������');
-    }
-
-    const scanResult = scannedBatch.component.name === recipeComponentName;
-    if (!scanResult) {
-      throw new NotFoundException(
-        `���������� ${scannedBatch.component.name}, �������� ${recipeComponentName}`,
-      );
-    }
-
-    if (
-      validBatchesId.length > 0 &&
-      !validBatchesId.includes(scannedBatch.id)
-    ) {
-      const scanEvent = await this.prisma.scanEvent.create({
-        data: {
-          orderId,
-          componentId: recipeComponentId,
-          batchId: scannedBatch.id,
-          scannedCode: componentBarcode,
-          result: ScanResult.WRONG,
-          deviceId: 'tutel_phone',
-          operatorId: workerName,
+        select: {
+          id: true,
+          batchNumber: true,
+          component: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
         },
       });
 
-      void this.telegramBotService.handleScanEventCreated(scanEvent.id);
+      if (!scannedBatch) {
+        throw new NotFoundException('Компонент не найден в системе!');
+      }
 
-      throw new NotFoundException(
-        `Сканирован ${recipeComponentName} не верной партии: ${scannedBatch.batchNumber}`,
-      );
-    }
+      const scanResult = scannedBatch.component.name === recipeComponentName;
+      if (!scanResult) {
+        const scanEventData = await tx.scanEvent.create({
+          data: {
+            orderId,
+            componentId: recipeComponentId,
+            batchId: scannedBatch.id,
+            scannedCode: componentBarcode,
+            result: ScanResult.WRONG,
+            deviceId: 'tutel_phone',
+            operatorId: workerName,
+          },
+        });
+        events.push(new ScanEventCreatedEvent(scanEventData.id));
 
-    try {
-      const createdAct = await this.prisma.$transaction(async (tx) => {
+        throw new NotFoundException(
+          `Сканированный компонент: ${scannedBatch.component.name}, не соответствует рецептурному: ${recipeComponentName}`,
+        );
+      }
+
+      if (
+        validBatchesId.length > 0 &&
+        !validBatchesId.includes(scannedBatch.id)
+      ) {
+        const scanEventData = await tx.scanEvent.create({
+          data: {
+            orderId,
+            componentId: recipeComponentId,
+            batchId: scannedBatch.id,
+            scannedCode: componentBarcode,
+            result: ScanResult.WRONG,
+            deviceId: 'tutel_phone',
+            operatorId: workerName,
+          },
+        });
+
+        events.push(new ScanEventCreatedEvent(scanEventData.id));
+
+        throw new NotFoundException(
+          `Сканирован компонент ${recipeComponentName} не верной партии: ${scannedBatch.batchNumber}`,
+        );
+      }
+
+      try {
         const act = await tx.fillingActBucket.create({
           data: {
             ...createData,
@@ -127,32 +141,31 @@ export class FillingBucketActsService {
             operatorId: workerName,
           },
         });
-        console.log('scanEvent: ', scanEvent);
 
         return { act, scanEvent };
-      });
-
-      if (createdAct.scanEvent.result === 'WRONG') {
-        void this.telegramBotService.handleScanEventCreated(
-          createdAct.scanEvent.id,
+      } catch (error) {
+        console.log('error: ', error);
+        throw new InternalServerErrorException(
+          'Внутренняя ошибка сервера при попытке создания акта заполнения ёмкости',
         );
       }
+    });
 
-      return plainToInstance(
-        FillingBucketActResponseDto,
-        {
-          ...createdAct,
-          componentName: createdAct.act.component.name,
-          componentBatch: createdAct.act.batch.batchNumber,
-        },
-        {
-          excludeExtraneousValues: true,
-        },
-      );
-    } catch (error) {
-      console.log('error: ', error);
-      throw new InternalServerErrorException('�� ������� ������� ��� �������');
+    for (const event of events) {
+      this.eventEmitter.emit(EVENTS.NOTIFICATIONS.SCAN_EVENT_CREATED, event);
     }
+
+    return plainToInstance(
+      FillingBucketActResponseDto,
+      {
+        ...createdAct,
+        componentName: createdAct.act.component.name,
+        componentBatch: createdAct.act.batch.batchNumber,
+      },
+      {
+        excludeExtraneousValues: true,
+      },
+    );
   }
 
   async createFillContainerAct(

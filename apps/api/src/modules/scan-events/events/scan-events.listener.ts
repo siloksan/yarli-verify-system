@@ -5,6 +5,7 @@ import { OnEvent } from '@nestjs/event-emitter';
 
 import { NotificationService } from 'src/common/notification/notification.interface';
 import { ScanEventWithOrderNotification } from 'src/common/notification/dto/scan-event-notification.dto';
+import { EVENTS } from 'src/common/constants/events.constant.ts'
 
 @Injectable()
 export class ScanEventsListener {
@@ -15,7 +16,7 @@ export class ScanEventsListener {
     private readonly notificationService: NotificationService,
   ) {}
 
-  @OnEvent('scan-event.created')
+  @OnEvent(EVENTS.NOTIFICATIONS.SCAN_EVENT_CREATED)
   async handleScanEventCreated(event: ScanEventCreatedEvent) {
     const scanEvent = await this.prisma.scanEvent.findUnique({
       where: { id: event.scanEventId },

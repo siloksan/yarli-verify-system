@@ -7,15 +7,14 @@ import {
   ScanEventDto,
 } from './dto/create-scan-event.dto';
 import { plainToInstance } from 'class-transformer';
-import { TelegramBotService } from '../telegram-bot/telegram-bot.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ScanEventCreatedEvent } from './events/scan-event-created.event';
+import { EVENTS } from 'src/common/constants/events.constant';
 
 @Injectable()
 export class ScanEventsService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly telegramBotService: TelegramBotService,
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
@@ -75,7 +74,7 @@ export class ScanEventsService {
     });
 
     for (const event of events) {
-      this.eventEmitter.emit('scan-event.created', event);
+      this.eventEmitter.emit(EVENTS.NOTIFICATIONS.SCAN_EVENT_CREATED, event);
     }
 
     return plainToInstance(
@@ -91,6 +90,8 @@ export class ScanEventsService {
   }
 
   async createQrCodeScanEvent(createScanEventDto: CreateQrCodeScanEventDto) {
+    const events: ScanEventCreatedEvent[] = [];
+
     const {
       orderId,
       deviceId,
@@ -99,32 +100,46 @@ export class ScanEventsService {
       recipeComponentName,
       qrData,
     } = createScanEventDto;
-    const scannedData = await this.prisma.component.findFirst({
-      where: { id: qrData.componentId },
-      select: {
-        id: true,
-        name: true,
-      },
-    });
 
-    if (!scannedData) {
-      throw new BadRequestException('Сканированный код не распознан');
+    const { scannedData, scanEventData } = await this.prisma.$transaction(
+      async (tx) => {
+        const scannedData = await tx.component.findFirst({
+          where: { id: qrData.componentId },
+          select: {
+            id: true,
+            name: true,
+          },
+        });
+
+        if (!scannedData) {
+          throw new BadRequestException('Сканированный код не распознан');
+        }
+
+        const scanResult = scannedData.name === recipeComponentName;
+
+        const scanEventData = await tx.scanEvent.create({
+          data: {
+            orderId,
+            componentId: recipeComponentId,
+            bucketId: qrData.id,
+            result: scanResult ? ScanResult.OK : ScanResult.WRONG,
+            deviceId,
+            operatorId,
+          },
+        });
+
+        events.push(new ScanEventCreatedEvent(scanEventData.id));
+
+        return {
+          scanEventData,
+          scannedData,
+        };
+      },
+    );
+
+    for (const event of events) {
+      this.eventEmitter.emit(EVENTS.NOTIFICATIONS.SCAN_EVENT_CREATED, event);
     }
-
-    const scanResult = scannedData.name === recipeComponentName;
-
-    const scanEventData = await this.prisma.scanEvent.create({
-      data: {
-        orderId,
-        componentId: recipeComponentId,
-        bucketId: qrData.id,
-        result: scanResult ? ScanResult.OK : ScanResult.WRONG,
-        deviceId,
-        operatorId,
-      },
-    });
-
-    this.telegramBotService.handleScanEventCreated(scanEventData.id);
 
     return plainToInstance(
       ScanEventDto,
