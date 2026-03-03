@@ -19,7 +19,8 @@ export default function RootProvider() {
 export function RootLayout() {
   return (
     <Stack>
-      <Stack.Screen name="index" options={{ title: 'Home' }} />
+      <Stack.Screen name="index" options={{ title: 'ЯрЛИ производство' }} />
+      <Stack.Screen name="orders" options={{ headerShown: false }} />
       <Stack.Screen
         name={SCANNER_ROUTES.scanner_check}
         options={{ title: 'Сканируйте компонент' }}

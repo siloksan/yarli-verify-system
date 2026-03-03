@@ -6,11 +6,12 @@ import { NOTIFICATION_SERVICE } from 'src/common/config/constant/services.token'
 @Module({
   imports: [ConfigModule],
   providers: [
+    TelegramBotService,
     {
       provide: NOTIFICATION_SERVICE,
-      useClass: TelegramBotService,
+      useExisting: TelegramBotService,
     },
   ],
-  exports: [TelegramBotService],
+  exports: [NOTIFICATION_SERVICE],
 })
 export class TelegramBotModule {}

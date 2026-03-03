@@ -145,7 +145,7 @@ export class TelegramBotService implements OnModuleInit, NotificationService {
       '',
       `🟢 *Ожидался:* \`${recipeComponentName}\``,
       `🔴 *Отсканирован:* \`${scannedComponentName}\``,
-      `📌 Партия сканированного компонента: *${scannedComponentBatch}*`
+      `📌 Партия сканированного компонента: *${scannedComponentBatch}*`,
       '',
       '━━━━━━━━━━━━━━━━━━',
       '📦 *Контекст операции*',

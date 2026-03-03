@@ -1,11 +1,12 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from 'src/common/prisma/prisma.service';
 import { ScanEventCreatedEvent } from './scan-event-created.event';
 import { OnEvent } from '@nestjs/event-emitter';
 
 import { NotificationService } from 'src/common/notification/notification.interface';
 import { ScanEventWithOrderNotification } from 'src/common/notification/dto/scan-event-notification.dto';
-import { EVENTS } from 'src/common/constants/events.constant.ts'
+import { EVENTS } from 'src/common/constants/events.constant';
+import { NOTIFICATION_SERVICE } from 'src/common/config/constant/services.token';
 
 @Injectable()
 export class ScanEventsListener {
@@ -13,6 +14,7 @@ export class ScanEventsListener {
 
   constructor(
     private readonly prisma: PrismaService,
+    @Inject(NOTIFICATION_SERVICE)
     private readonly notificationService: NotificationService,
   ) {}
 
