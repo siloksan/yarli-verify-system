@@ -24,7 +24,7 @@ export class FillingBucketActsService {
   ) {}
 
   async create(createFillingBucketActDto: CreateFillingBucketActDto) {
-    const events: ScanEventCreatedEvent[] = [];
+    // const events: ScanEventCreatedEvent[] = [];
 
     const {
       orderId,
@@ -36,124 +36,121 @@ export class FillingBucketActsService {
       ...createData
     } = createFillingBucketActDto;
 
+    const scannedBatch = await this.prisma.componentBatch.findUnique({
+      where: {
+        barcode: componentBarcode,
+      },
+      select: {
+        id: true,
+        batchNumber: true,
+        component: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    if (!scannedBatch) {
+      throw new NotFoundException('Компонент не найден в системе!');
+    }
+
+    const scanResult = scannedBatch.component.name === recipeComponentName;
+
+    if (!scanResult) {
+      const scanEventData = await this.prisma.scanEvent.create({
+        data: {
+          orderId,
+          componentId: recipeComponentId,
+          batchId: scannedBatch.id,
+          scannedCode: componentBarcode,
+          result: ScanResult.WRONG,
+          deviceId: 'tutel_phone',
+          operatorId: workerName,
+        },
+      });
+
+      this.eventEmitter.emit(
+        EVENTS.NOTIFICATIONS.SCAN_EVENT_CREATED,
+        new ScanEventCreatedEvent(scanEventData.id),
+      );
+
+      throw new NotFoundException(
+        `Сканированный компонент: ${scannedBatch.component.name}, не соответствует рецептурному: ${recipeComponentName}`,
+      );
+    }
+
+    if (
+      validBatchesId.length > 0 &&
+      !validBatchesId.includes(scannedBatch.id)
+    ) {
+      const scanEventData = await this.prisma.scanEvent.create({
+        data: {
+          orderId,
+          componentId: recipeComponentId,
+          batchId: scannedBatch.id,
+          scannedCode: componentBarcode,
+          result: ScanResult.WRONG,
+          deviceId: 'tutel_phone',
+          operatorId: workerName,
+        },
+      });
+
+      this.eventEmitter.emit(
+        EVENTS.NOTIFICATIONS.SCAN_EVENT_CREATED,
+        new ScanEventCreatedEvent(scanEventData.id),
+      );
+
+      throw new NotFoundException(
+        `Сканирован компонент ${recipeComponentName} не верной партии: ${scannedBatch.batchNumber}`,
+      );
+    }
+
     const createdAct = await this.prisma.$transaction(async (tx) => {
-      const scannedBatch = await tx.componentBatch.findUnique({
-        where: {
-          barcode: componentBarcode,
+      const act = await tx.fillingActBucket.create({
+        data: {
+          ...createData,
+          workerName,
+          orderId,
+          componentId: scannedBatch.component.id,
+          batchId: scannedBatch.id,
         },
         select: {
           id: true,
-          batchNumber: true,
+          workerName: true,
+          weight: true,
+          createdAt: true,
+          bucketId: true,
+          componentId: true,
+          orderId: true,
           component: {
             select: {
-              id: true,
               name: true,
+            },
+          },
+          batch: {
+            select: {
+              batchNumber: true,
             },
           },
         },
       });
 
-      if (!scannedBatch) {
-        throw new NotFoundException('Компонент не найден в системе!');
-      }
+      const scanEvent = await tx.scanEvent.create({
+        data: {
+          orderId,
+          componentId: recipeComponentId,
+          batchId: scannedBatch.id,
+          scannedCode: componentBarcode,
+          result: ScanResult.OK,
+          deviceId: 'tutel_phone',
+          operatorId: workerName,
+        },
+      });
 
-      const scanResult = scannedBatch.component.name === recipeComponentName;
-      if (!scanResult) {
-        const scanEventData = await tx.scanEvent.create({
-          data: {
-            orderId,
-            componentId: recipeComponentId,
-            batchId: scannedBatch.id,
-            scannedCode: componentBarcode,
-            result: ScanResult.WRONG,
-            deviceId: 'tutel_phone',
-            operatorId: workerName,
-          },
-        });
-        events.push(new ScanEventCreatedEvent(scanEventData.id));
-
-        throw new NotFoundException(
-          `Сканированный компонент: ${scannedBatch.component.name}, не соответствует рецептурному: ${recipeComponentName}`,
-        );
-      }
-
-      if (
-        validBatchesId.length > 0 &&
-        !validBatchesId.includes(scannedBatch.id)
-      ) {
-        const scanEventData = await tx.scanEvent.create({
-          data: {
-            orderId,
-            componentId: recipeComponentId,
-            batchId: scannedBatch.id,
-            scannedCode: componentBarcode,
-            result: ScanResult.WRONG,
-            deviceId: 'tutel_phone',
-            operatorId: workerName,
-          },
-        });
-
-        events.push(new ScanEventCreatedEvent(scanEventData.id));
-
-        throw new NotFoundException(
-          `Сканирован компонент ${recipeComponentName} не верной партии: ${scannedBatch.batchNumber}`,
-        );
-      }
-
-      try {
-        const act = await tx.fillingActBucket.create({
-          data: {
-            ...createData,
-            workerName,
-            orderId,
-            componentId: scannedBatch.component.id,
-            batchId: scannedBatch.id,
-          },
-          select: {
-            id: true,
-            workerName: true,
-            weight: true,
-            createdAt: true,
-            bucketId: true,
-            componentId: true,
-            orderId: true,
-            component: {
-              select: {
-                name: true,
-              },
-            },
-            batch: {
-              select: {
-                batchNumber: true,
-              },
-            },
-          },
-        });
-
-        const scanEvent = await tx.scanEvent.create({
-          data: {
-            orderId,
-            componentId: recipeComponentId,
-            batchId: scannedBatch.id,
-            scannedCode: componentBarcode,
-            result: ScanResult.OK,
-            deviceId: 'tutel_phone',
-            operatorId: workerName,
-          },
-        });
-
-        return { act, scanEvent };
-      } catch (error) {
-        console.log('error: ', error);
-        throw new InternalServerErrorException(
-          'Внутренняя ошибка сервера при попытке создания акта заполнения ёмкости',
-        );
-      }
+      return { act, scanEvent };
     });
-
-    for (const event of events) {
-      this.eventEmitter.emit(EVENTS.NOTIFICATIONS.SCAN_EVENT_CREATED, event);
-    }
 
     return plainToInstance(
       FillingBucketActResponseDto,
@@ -190,7 +187,7 @@ export class FillingBucketActsService {
     });
 
     if (!scannedBatch) {
-      throw new NotFoundException('Компонента не найден в системе');
+      throw new NotFoundException('Компонент не найден в системе');
     }
 
     const bucketData = await this.prisma.bucket.findUnique({
@@ -206,11 +203,8 @@ export class FillingBucketActsService {
         },
       },
     });
-    console.log('scannedBatch: ', scannedBatch);
 
     if (scannedBatch.component.id !== bucketData.component.id) {
-      // void this.telegramBotService.handleScanEventCreated(scanEvent.id);
-
       throw new NotFoundException(
         `Обнаружено не соответствие: ёмкость из под ${bucketData.component.name} не подходит для заполнения ${scannedBatch.component.name}`,
       );
