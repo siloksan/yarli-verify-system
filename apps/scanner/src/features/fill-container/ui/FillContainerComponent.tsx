@@ -17,12 +17,13 @@ import {
   useFillContainer,
   FillingState,
 } from '../hooks/useFillContainer';
-import { CameraInstructions } from '@/src/features/check-fill-scanner/ui/CameraInstructions';
-import { CameraPermission } from '@/src/features/check-fill-scanner/ui/CameraPermission';
-import { CameraUnavailable } from '@/src/features/check-fill-scanner/ui/CameraUnavailable';
-import { ScannerCamera } from '@/src/features/check-fill-scanner/ui/ScannerCamera';
-import { ScannerHeader } from '@/src/features/check-fill-scanner/ui/ScannerHeader';
-import { ScannerOverlay } from '@/src/features/check-fill-scanner/ui/ScannerOverlay';
+import {
+  CameraInstructions,
+  CameraPermission,
+  CameraUnavailable,
+  ScannerCamera,
+  ScannerOverlay,
+} from '@/src/shared/ui';
 
 const { width } = Dimensions.get('window');
 const SCANNER_SIZE = width * 0.8;
@@ -58,8 +59,6 @@ export function FillContainerComponent() {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#000000" />
-
-      <ScannerHeader />
 
       <View style={styles.cameraContainer}>
         <ScannerCamera

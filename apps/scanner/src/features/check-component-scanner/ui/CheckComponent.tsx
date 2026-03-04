@@ -1,6 +1,5 @@
 import { useCameraPermissions } from 'expo-camera';
-import { Redirect, useRouter } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -17,14 +16,13 @@ import {
 } from '@/src/shared/stores';
 import { AppToWebMessage } from '@repo/api';
 import { useScannerValidation } from '../hooks';
-import { CameraPermission } from './CameraPermission';
-import { CameraUnavailable } from './CameraUnavailable';
-import { ScannerHeader } from './ScannerHeader';
-import { ScannerCamera } from './ScannerCamera';
-import { ScannerOverlay } from './ScannerOverlay';
 import { ScannerState } from '../types';
 import { ScannerModalChildren } from './ScannerModalChildren';
 import { useModal } from '@/src/shared/modal/modal.context';
+import { CameraPermission } from '@/src/shared/ui';
+import { CameraUnavailable } from '@/src/shared/ui';
+import { ScannerCamera } from '@/src/shared/ui';
+import { ScannerOverlay } from '@/src/shared/ui';
 
 const { width } = Dimensions.get('window');
 const SCANNER_SIZE = width * 0.8;
@@ -32,10 +30,8 @@ const SCANNER_SIZE = width * 0.8;
 export function CheckComponent() {
   const [torch, setTorch] = useState(false);
   const [permission, requestPermission] = useCameraPermissions();
-  const router = useRouter();
   const webViewRef = useWebViewBridgeStore((s) => s.webViewRef);
   const request = useScannerSessionStore((s) => s.request);
-  console.log('request: ', request);
   const { hideModal } = useModal();
 
   if (request?.type !== 'SCAN_COMPONENT') return null;
@@ -75,8 +71,6 @@ export function CheckComponent() {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#000000" />
 
-      <ScannerHeader />
-
       <View style={styles.cameraContainer}>
         <ScannerCamera
           torch={torch}
@@ -93,11 +87,11 @@ export function CheckComponent() {
 
       <View style={styles.instructions}>
         <View style={styles.targetInfoCard}>
-          <Text style={styles.targetInfoTitle}>Component to validate</Text>
+          <Text style={styles.targetInfoTitle}>Проверка компонента</Text>
           <Text style={styles.targetInfoText}>
             {requestPayload?.componentName ?? 'N/A'}
           </Text>
-          <Text style={styles.targetInfoTitle}>Batches to validate</Text>
+          <Text style={styles.targetInfoTitle}>Партии для проверки</Text>
           <Text style={styles.targetInfoText}>
             {requestPayload?.validBatches?.length
               ? requestPayload.validBatches.join(', ')
@@ -106,7 +100,7 @@ export function CheckComponent() {
         </View>
         {state.status === 'idle' ? (
           <Pressable style={styles.resetButton} onPress={showInstruction}>
-            <Text style={styles.resetButtonText}>Инструкция пользования</Text>
+            <Text style={styles.resetButtonText}>Инструкция использования</Text>
           </Pressable>
         ) : (
           <Pressable style={styles.resetButton} onPress={handleReset}>

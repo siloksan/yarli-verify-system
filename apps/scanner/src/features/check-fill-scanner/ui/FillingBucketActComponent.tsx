@@ -1,6 +1,5 @@
 import { useCameraPermissions } from 'expo-camera';
-import { Redirect, useRouter } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -11,23 +10,15 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import {
-  useScannerSessionStore,
-  useWebViewBridgeStore,
-} from '@/src/shared/stores';
-import {
-  AppToWebMessage,
-  ICreateFillingActBucketDto,
-  ScannerRequestPayload,
-} from '@repo/api';
-import { CameraPermission } from './CameraPermission';
-import { CameraUnavailable } from './CameraUnavailable';
-import { ScannerHeader } from './ScannerHeader';
-import { ScannerCamera } from './ScannerCamera';
-import { ScannerOverlay } from './ScannerOverlay';
 import { useModal } from '@/src/shared/modal';
-import { CameraInstructions } from './CameraInstructions';
 import { useFilling } from '../hooks/useFilling';
+import {
+  CameraInstructions,
+  CameraPermission,
+  CameraUnavailable,
+  ScannerCamera,
+  ScannerOverlay,
+} from '@/src/shared/ui';
 
 const { width } = Dimensions.get('window');
 const SCANNER_SIZE = width * 0.8;
@@ -35,7 +26,6 @@ const SCANNER_SIZE = width * 0.8;
 export function FillingBucketActComponent() {
   const [torch, setTorch] = useState(false);
   const [permission, requestPermission] = useCameraPermissions();
-  const webViewRef = useWebViewBridgeStore((s) => s.webViewRef);
   const { showModal, hideModal } = useModal();
   const filling = useFilling();
   if (!filling) return null;
@@ -47,12 +37,6 @@ export function FillingBucketActComponent() {
     isScannerModeAvailable,
     handleBottomReset,
   } = filling;
-
-  // const sendResultToWeb = (response: AppToWebMessage) => {
-  //   if (!webViewRef) return;
-
-  //   webViewRef.postMessage(JSON.stringify(response));
-  // };
 
   if (!permission) {
     return <CameraPermission />;
@@ -70,8 +54,6 @@ export function FillingBucketActComponent() {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#000000" />
 
-      <ScannerHeader />
-
       <View style={styles.cameraContainer}>
         <ScannerCamera
           torch={torch}
@@ -87,15 +69,15 @@ export function FillingBucketActComponent() {
       <View style={styles.instructions}>
         <View style={styles.targetInfoCard}>
           <Text style={styles.targetInfoText}>step: {state.step}</Text>
-          <Text style={styles.targetInfoTitle}>Component to validate</Text>
+          <Text style={styles.targetInfoTitle}>Компонент на проверку</Text>
           <Text style={styles.targetInfoText}>
             {request.payload.componentName}
           </Text>
-          <Text style={styles.targetInfoTitle}>Batches to validate</Text>
+          <Text style={styles.targetInfoTitle}>Валидные партии</Text>
           <Text style={styles.targetInfoText}>
             {request.payload.validBatches?.length
               ? request.payload.validBatches.join(', ')
-              : 'No batch restrictions'}
+              : 'Партии не указаны'}
           </Text>
         </View>
         {isScannerModeAvailable ? (

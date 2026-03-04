@@ -139,20 +139,18 @@ export class TelegramBotService implements OnModuleInit, NotificationService {
 
     const lines = [
       '🚨 *ОШИБКА СКАНИРОВАНИЯ* 🚨',
-      '━━━━━━━━━━━━━━━━━━',
       '',
       '⚠️ *Критическое несоответствие*',
       '',
-      `🟢 *Ожидался:* \`${recipeComponentName}\``,
-      `🔴 *Отсканирован:* \`${scannedComponentName}\``,
+      `🟢 *Требуется:* \`${recipeComponentName}\``,
+      `🔴 *Сканирован:* \`${scannedComponentName}\``,
       `📌 Партия сканированного компонента: *${scannedComponentBatch}*`,
       '',
-      '━━━━━━━━━━━━━━━━━━',
       '📦 *Контекст операции*',
       '',
-      `🧾 Заказ: *${orderName}*`,
+      `🧾 Заказ на производство: *${orderName}*`,
       `🏷 Партия заказа: *${orderBatch}*`,
-      `👷 Оператор: *${workerName}*`,
+      `👷 Сотрудник: *${workerName}*`,
       `⏱ Время сканирования: *${createdAt}*`,
     ];
 

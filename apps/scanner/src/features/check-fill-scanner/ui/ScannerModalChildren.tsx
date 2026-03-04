@@ -1,7 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { IScanEvent } from '@repo/api';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
-// import { FillingState } from '../model/machine/filling.types';
 
 interface Props {
   resetScanner: () => void;

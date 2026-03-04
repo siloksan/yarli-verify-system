@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export function CameraPermission() {
@@ -7,7 +7,7 @@ export function CameraPermission() {
         <View style={styles.permissionContainer}>
           <Text style={styles.permissionTitle}>Требуется доступ к камере</Text>
           <Text style={styles.permissionSubtitle}>
-            Разрешите доступ, чтобы сканировать QR-коды
+            Разрешите доступ для сканирования
           </Text>
         </View>
       </SafeAreaView>

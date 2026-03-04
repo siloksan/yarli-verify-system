@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { IScanEvent, ScanResult } from '@repo/api';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { ScannerState } from '../types';
-import { CameraInstructions } from './CameraInstructions';
+import { CameraInstructions } from '@/src/shared/ui';
 
 interface Props {
   state: ScannerState;
