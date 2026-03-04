@@ -30,21 +30,16 @@ export default function OrderDetailsPage() {
             to="/orders"
             className="text-sm font-semibold text-gray-500 transition hover:text-gray-700"
           >
-            Назад к заказам
+            Назад к заказам на производство
           </Link>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
-                Заказ
+                Заказ на производство {order?.orderNumber}
               </p>
               <h1 className="text-2xl font-semibold text-gray-900">
-                {order?.label ?? 'Рецептура'}
+                {order?.label}
               </h1>
-              <p className="text-sm text-gray-500">
-                {order?.orderNumber
-                  ? `Заказ №${order.orderNumber}`
-                  : `ID ${orderId}`}
-              </p>
             </div>
           </div>
         </header>
@@ -85,7 +80,7 @@ export default function OrderDetailsPage() {
 
         {!isLoading && !isError && components.length === 0 && (
           <div className="rounded-xl border border-dashed border-gray-300 bg-white p-6 text-center text-gray-500">
-            Компоненты для этого заказа не найдены.
+            Список компонентов для этого заказа не найден.
           </div>
         )}
 

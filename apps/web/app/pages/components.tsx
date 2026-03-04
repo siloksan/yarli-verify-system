@@ -119,25 +119,13 @@ export default function ComponentsPage() {
             to="/"
             className="text-sm font-semibold text-gray-500 transition hover:text-gray-700"
           >
-            Назад к заказам
+            в Главное меню
           </Link>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
-                Компоненты
-              </p>
               <h1 className="text-2xl font-semibold text-gray-900">
-                Справочник компонентов
+                Справочник сырья и полуфабрикатов
               </h1>
-            </div>
-            <div className="rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-600 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
-                Всего
-              </p>
-              <p className="text-lg font-semibold text-gray-900">
-                {components?.length ?? 0} компонентов
-              </p>
-              <p className="text-sm text-gray-500">{totalBatchCount} партий</p>
             </div>
           </div>
         </header>
@@ -153,7 +141,7 @@ export default function ComponentsPage() {
             <input
               value={searchInput}
               onChange={(event) => setSearchInput(event.target.value)}
-              placeholder="Поиск по имени, коду или партии"
+              placeholder="Поиск по номенклотуре или партии"
               className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm text-gray-700 outline-none transition focus:border-gray-400"
             />
             <button
@@ -173,14 +161,14 @@ export default function ComponentsPage() {
 
         {isError && (
           <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">
-            Не удалось загрузить компоненты
+            Не удалось поучить список сырья и полуфабрикатов
             {error instanceof Error ? ` ${error.message}` : ''}
           </div>
         )}
 
         {!isLoading && !isError && (components?.length ?? 0) === 0 && (
           <div className="rounded-xl border border-dashed border-gray-300 bg-white p-6 text-center text-gray-500">
-            Компоненты не найдены.
+            Сырьё и полуфабрикаты не найдены.
           </div>
         )}
 
@@ -229,7 +217,7 @@ export default function ComponentsPage() {
                   <div className="mt-4 flex flex-col gap-2 border-t border-gray-100 pt-3">
                     {component.batches.length === 0 && (
                       <div className="rounded-xl border border-dashed border-gray-300 p-3 text-sm text-gray-500">
-                        Для компонента нет партий.
+                        нет партий.
                       </div>
                     )}
 
@@ -260,7 +248,7 @@ export default function ComponentsPage() {
                             }}
                             className="inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:bg-gray-100"
                           >
-                            Создать EAN-13
+                            Показать штрихкод
                           </button>
                         </div>
                       );

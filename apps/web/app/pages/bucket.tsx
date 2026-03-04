@@ -9,7 +9,7 @@ const FORM_ELEMENTS_NAME = {
   component: 'component',
   creator: 'creator',
   location: 'location',
-};
+} as const;
 
 export default function BucketsPage() {
   const [error, setError] = useState('');
@@ -32,7 +32,6 @@ export default function BucketsPage() {
     isLoading: bucketsLoading,
     isError: bucketsError,
   } = useAllBuckets();
-  console.log('buckets: ', buckets);
 
   const {
     data: components = [],
@@ -64,13 +63,12 @@ export default function BucketsPage() {
 
       createBucketMutation.mutate(createBucketData, {
         onSuccess: () => {
-          console.log('Тара успешно создана');
           form.reset();
           setIsSubmitBtnActive(false);
           setIsFormOpen(false);
         },
         onError: (error) => {
-          console.error('Ошибка при создании:', error);
+          console.error('Ошибка создания ёмкости:', error);
           if (error instanceof Error) {
             setError(error.message);
           }
@@ -204,7 +202,7 @@ export default function BucketsPage() {
         <body>
           <div class="qr-container">
             <div class="qr-image">
-              <img src="${qrImageUrl}" alt="QR Code для ${selectedBucket.componentName}" />
+              <img src="${createQrImageUrl(selectedBucket)}" alt="QR Code для ${selectedBucket.componentName}" />
             </div>
             <div class="qr-title">${selectedBucket.componentName}</div>
             <div class="qr-subtitle">ID: ${selectedBucket.id.slice(0, 8)}...</div>
@@ -258,17 +256,11 @@ export default function BucketsPage() {
         {/* Header */}
         <header className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-wide text-gray-500">
-              Склад
-            </p>
             <h1 className="text-2xl font-semibold text-gray-900">
-              Тара с компонентами
+              Ёмкости промежуточного хранения
             </h1>
           </div>
           <div className="flex items-center gap-3">
-            <span className="rounded-full bg-white px-3 py-1 text-sm text-gray-600 shadow-sm">
-              {filteredBuckets.length} из {buckets.length} емкостей
-            </span>
             <button
               onClick={() => setIsFormOpen(!isFormOpen)}
               className="inline-flex items-center gap-1 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
@@ -286,7 +278,7 @@ export default function BucketsPage() {
                   d="M12 4v16m8-8H4"
                 />
               </svg>
-              Добавить тару
+              Добавить новую ёмкость в систему
             </button>
           </div>
         </header>
@@ -324,7 +316,7 @@ export default function BucketsPage() {
 
               <div className="space-y-1">
                 <label className="text-sm font-medium text-gray-700">
-                  Создатель
+                  Сотрудник
                 </label>
                 <input
                   type="text"
@@ -501,7 +493,7 @@ export default function BucketsPage() {
               Нет емкостей
             </h3>
             <p className="mt-1 text-sm text-gray-500">
-              Начните с добавления новой тары с компонентом
+              Создайте новую ёмкость чтобы увидеть список доступных для заплнения
             </p>
             <button
               onClick={() => setIsFormOpen(true)}
@@ -574,7 +566,7 @@ export default function BucketsPage() {
                       Компонент
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                      Создатель
+                      Кто занёс в систему
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
                       Расположение
@@ -851,7 +843,7 @@ export default function BucketsPage() {
                   {selectedBucket.componentName}
                 </p>
                 <p className="text-sm text-gray-600">
-                  <span className="font-medium">Создатель:</span>{' '}
+                  <span className="font-medium">Занёс в систему:</span>{' '}
                   {selectedBucket.creator}
                 </p>
                 {selectedBucket.location && (
