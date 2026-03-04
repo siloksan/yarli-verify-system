@@ -9,14 +9,11 @@ interface InternalLinks {
 export function usePlatform() {
   const [searchParams] = useSearchParams();
 
-  const platform =
-    searchParams.get(PLATFORM_KEY) === PLATFORM_VALUES.APP
-      ? PLATFORM_VALUES.APP
-      : PLATFORM_VALUES.BROWSER;
+  const isApp = searchParams.get(PLATFORM_KEY) === PLATFORM_VALUES.APP;
 
   const getUrl = ({ appUrl, webUrl }: InternalLinks) => {
-    return platform === PLATFORM_VALUES.APP ? appUrl : webUrl;
+    return isApp ? appUrl : webUrl;
   };
 
-  return { getUrl, platform };
+  return { getUrl, isApp };
 }

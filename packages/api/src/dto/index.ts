@@ -13,6 +13,8 @@ export interface IOrderDto {
   status: OrderStatus;
   label: string;
   id: string;
+  plannedAt?: string | null;
+  weight?: string;
 }
 
 export enum ScanResult {

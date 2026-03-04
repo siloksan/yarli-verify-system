@@ -36,12 +36,20 @@ export class OrdersService {
         id: true,
         orderNumber: true,
         label: true,
-        updatedAt: true,
+        plannedAt: true,
+        weight: true,
         status: true,
+        updatedAt: true,
       },
     });
 
-    return plainToInstance(OrderResponseDto, result, {
+    const normalizedResult = result.map((order) => ({
+      ...order,
+      weight: order.weight.toString(),
+      plannedAt: order.plannedAt?.toISOString() ?? null,
+    }));
+
+    return plainToInstance(OrderResponseDto, normalizedResult, {
       excludeExtraneousValues: true,
     });
   }
@@ -58,11 +66,20 @@ export class OrdersService {
         id: true,
         orderNumber: true,
         label: true,
+        plannedAt: true,
+        weight: true,
+        status: true,
         updatedAt: true,
       },
     });
 
-    return plainToInstance(OrderResponseDto, result, {
+    const normalizedResult = result.map((order) => ({
+      ...order,
+      weight: order.weight.toString(),
+      plannedAt: order.plannedAt?.toISOString() ?? null,
+    }));
+
+    return plainToInstance(OrderResponseDto, normalizedResult, {
       excludeExtraneousValues: true,
     });
   }
@@ -95,6 +112,8 @@ export class OrdersService {
 
     const normalizedOrder = {
       ...order,
+      weight: order.weight.toString(),
+      plannedAt: order.plannedAt?.toISOString() ?? null,
       components: order.components.map((component) => ({
         ...component,
         scanEvents: component.scanEvents.map((event) => ({

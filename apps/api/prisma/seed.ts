@@ -1,5 +1,5 @@
 import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient } from '../generated/prisma/client';
+import { Prisma, PrismaClient } from '../generated/prisma/client';
 import { Pool } from 'pg';
 import 'dotenv/config';
 import { COMMON_COMPONENTS, COLOR_COMPONENTS } from './seed.data';
@@ -108,13 +108,18 @@ async function seed() {
 
   for (const element of ORDERS) {
     const order = element;
-    const components = COMMON_COMPONENTS.map((item, index) => ({
-      componentName: item.component.componentName,
-      position: index + 1,
-      requiredQty: item.component.requiredQty,
-      unit: item.component.unit,
-      validBatches: [],
-    }));
+    let totalWeight = new Prisma.Decimal(0);
+    const components = COMMON_COMPONENTS.map((item, index) => {
+      totalWeight = totalWeight.plus(item.component.requiredQty);
+
+      return {
+        componentName: item.component.componentName,
+        position: index + 1,
+        requiredQty: item.component.requiredQty,
+        unit: item.component.unit,
+        validBatches: [],
+      };
+    });
 
     if (components.length !== 8) {
       throw new Error(
@@ -130,6 +135,7 @@ async function seed() {
         components: {
           create: components,
         },
+        weight: totalWeight,
       },
     });
   }

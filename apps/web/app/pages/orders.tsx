@@ -1,7 +1,30 @@
-﻿import { Link } from 'react-router';
-import { useAllOrders } from '../features/orders/hooks/orders.hook';
+﻿import { useMemo, useState } from 'react';
+import { Link } from 'react-router';
 import { OrderStatus } from '@repo/api';
+import { useAllOrders } from '../features/orders/hooks/orders.hook';
+
+function formatWeight(weight?: string) {
+  if (!weight) return 'Не указан';
+  const parsed = Number(weight);
+  if (Number.isNaN(parsed)) return `${weight} кг`;
+  return `${parsed.toLocaleString('ru-RU', { maximumFractionDigits: 2 })} кг`;
+}
+
+function formatPlannedAt(plannedAt?: string | null) {
+  if (!plannedAt) return 'Не указано';
+  const parsed = new Date(plannedAt);
+  if (Number.isNaN(parsed.getTime())) return plannedAt;
+  return parsed.toLocaleString('ru-RU', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
 export default function OrdersPage() {
+  const [search, setSearch] = useState('');
   const {
     data: orders,
     isLoading,
@@ -9,71 +32,121 @@ export default function OrdersPage() {
     error,
   } = useAllOrders([OrderStatus.OPEN, OrderStatus.IN_PROGRESS]);
 
+  const normalizedSearch = search.trim().toLowerCase();
+  const filteredOrders = useMemo(() => {
+    if (!orders) return [];
+    if (!normalizedSearch) return orders;
+
+    return orders.filter((order) => {
+      const orderNumber = order.orderNumber?.toLowerCase() ?? '';
+      const label = order.label?.toLowerCase() ?? '';
+      return (
+        orderNumber.includes(normalizedSearch) ||
+        label.includes(normalizedSearch)
+      );
+    });
+  }, [orders, normalizedSearch]);
+
   return (
-    <div className="min-h-screen bg-gray-50 p-4 safe-padding">
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
-        <header className="flex items-center justify-between">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,#dbeafe_0%,#f8fafc_45%,#f1f5f9_100%)] p-4 safe-padding">
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-5">
+        <header className="rounded-3xl border border-slate-200/60 bg-white/80 p-5 shadow-sm backdrop-blur">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-wide text-gray-500">
-              Заказы
-            </p>
-            <h1 className="text-2xl font-semibold text-gray-900">
+            <h1 className="text-2xl font-semibold text-slate-900">
               Заказы на производство
             </h1>
+            <p className="mt-1 text-sm text-slate-500">
+              Поиск по партии и названию заказа
+            </p>
           </div>
-          <span className="rounded-full bg-white px-3 py-1 text-sm text-gray-600 shadow-sm">
-            {orders?.length ?? 0} всего
-          </span>
+          <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
+            <label htmlFor="order-search" className="sr-only">
+              Поиск заказа
+            </label>
+            <input
+              id="order-search"
+              type="search"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Введите партию или название заказа"
+              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+            />
+            <div className="rounded-2xl bg-slate-900 px-4 py-3 text-center text-sm font-medium text-slate-100">
+              Найдено: {filteredOrders.length}
+            </div>
+          </div>
         </header>
 
         {isLoading && (
-          <div className="rounded-xl border border-dashed border-gray-300 bg-white p-6 text-center text-gray-500">
+          <div className="rounded-2xl border border-dashed border-slate-300 bg-white/90 p-6 text-center text-slate-500">
             Загрузка заказов...
           </div>
         )}
 
         {isError && (
-          <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">
+          <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">
             Не удалось получить список заказов
             {error instanceof Error ? ` ${error.message}` : ''}
           </div>
         )}
 
         {!isLoading && !isError && (orders?.length ?? 0) === 0 && (
-          <div className="rounded-xl border border-dashed border-gray-300 bg-white p-6 text-center text-gray-500">
+          <div className="rounded-2xl border border-dashed border-slate-300 bg-white/90 p-6 text-center text-slate-500">
             Заказы не найдены.
           </div>
         )}
 
-        <div className="flex flex-col gap-3">
-          {orders?.map((order) => (
-            <div
-              key={order.id}
-              className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm"
-            >
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div className="min-w-0">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
-                    Заказ №{order.orderNumber}
-                  </p>
-                  <Link
-                    to={`scanner:///orders/${order.id}`}
-                    className="block truncate text-lg font-semibold text-gray-900 transition hover:text-gray-700"
-                  >
-                    {order.label}
-                  </Link>
-                </div>
+        {!isLoading &&
+          !isError &&
+          (orders?.length ?? 0) > 0 &&
+          filteredOrders.length === 0 && (
+            <div className="rounded-2xl border border-dashed border-slate-300 bg-white/90 p-6 text-center text-slate-500">
+              По вашему запросу ничего не найдено.
+            </div>
+          )}
 
-                <div className="flex flex-wrap items-center gap-2">
-                  <Link
-                    to={`scanner:///orders/${order.id}`}
-                    className="inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:bg-gray-50"
-                  >
-                    Открыть
-                  </Link>
+        <div className="grid gap-3">
+          {filteredOrders.map((order) => (
+            <Link
+              to={`scanner:///orders/${order.id}`}
+              key={order.id}
+              className="group rounded-3xl border border-slate-200/80 bg-white/90 p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md"
+            >
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">
+                    Партия {order.orderNumber}
+                  </p>
+                  <p className="mt-1 truncate text-xl font-semibold text-slate-900 transition group-hover:text-blue-700">
+                    {order.label}
+                  </p>
+                </div>
+                <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-blue-700">
+                  {order.status === OrderStatus.IN_PROGRESS
+                    ? 'В работе'
+                    : 'Открыт'}
+                </span>
+              </div>
+
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                  <p className="text-xs uppercase tracking-wide text-slate-500">
+                    Вес заказа
+                  </p>
+                  <p className="mt-1 text-sm font-semibold text-slate-900">
+                    {formatWeight(order.weight)}
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                  <p className="text-xs uppercase tracking-wide text-slate-500">
+                    Дата исполнения
+                  </p>
+                  <p className="mt-1 text-sm font-semibold text-slate-900">
+                    {formatPlannedAt(order.plannedAt)}
+                  </p>
                 </div>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       </div>
