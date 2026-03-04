@@ -27,7 +27,7 @@ const readHttpsConfig = () => {
 export default defineConfig({
   plugins: [tailwindcss(), reactRouter(), tsconfigPaths()],
   optimizeDeps: {
-    exclude: ['@repo/api'],// this option prevents Vite cashing it inside .vite, otherwise get an error after adding a new type
+    exclude: ['@repo/api'], // this option prevents Vite cashing it inside .vite, otherwise get an error after adding a new type
   },
   server: {
     https: readHttpsConfig(),
@@ -40,5 +40,6 @@ export default defineConfig({
     },
     host: true,
     port: 5173,
+    allowedHosts: ['rsjzn4-5173.csb.app'],
   },
 });

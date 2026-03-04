@@ -12,7 +12,6 @@ import type { ComponentStatus } from '~/features/order-recipe/types';
 
 export default function OrderDetailsPage() {
   const { orderId } = useParams();
-
   const { data: order, isLoading, isError, error } = useOrder(orderId);
   const components: IOrderComponentDto[] = useMemo(
     () =>

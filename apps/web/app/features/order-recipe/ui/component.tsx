@@ -137,7 +137,7 @@ export function Component({
 
       <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
         <span className="font-semibold text-gray-500">
-          Сканированные партии:
+          Отсканированные партии:
         </span>
         {scanEvents.length === 0 && (
           <span className="rounded-full bg-gray-100 px-3 py-1 text-gray-500">
@@ -146,9 +146,9 @@ export function Component({
         )}
         {scanEvents.map((event) => {
           const backgroundColor =
-            event.result === 'OK' ? 'bg-emerald-50' : 'bg-red-50';
+            event.scanResult === 'OK' ? 'bg-emerald-50' : 'bg-red-50';
           const textColor =
-            event.result === 'OK' ? 'text-emerald-700' : 'text-red-700';
+            event.scanResult === 'OK' ? 'text-emerald-700' : 'text-red-700';
 
           return (
             <span
@@ -157,7 +157,7 @@ export function Component({
             >
               {event.scannedComponentBatch
                 ? event.scannedComponentBatch
-                : 'не определено'}
+                : 'с ёмкости'}
             </span>
           );
         })}
