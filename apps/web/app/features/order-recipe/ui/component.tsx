@@ -2,6 +2,7 @@ import { useNativeFeatures } from '~/shared/hooks';
 import { STATUS_STYLES } from '../constants';
 import type { ComponentStatus } from '../types';
 import type { IScanEvent } from '@repo/api';
+import { usePlatform } from '~/shared/hooks/usePlatform';
 
 interface Props {
   orderId: string;
@@ -27,6 +28,7 @@ export function Component({
   const { dot, label, badge } = STATUS_STYLES[status];
 
   const native = useNativeFeatures();
+  const { isApp } = usePlatform();
 
   return (
     <div
@@ -70,69 +72,72 @@ export function Component({
             </span>
           ))}
         </div>
-
-        <button
-          onClick={() =>
-            native?.sendMessageToApp({
-              type: 'SCAN_COMPONENT',
-              payload: {
-                orderId,
-                componentId,
-                componentName,
-                validBatches,
-              },
-            })
-          }
-          className="inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:bg-gray-50"
-        >
-          <span className="flex items-center gap-2">
-            <svg
-              className="h-4 w-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+        {isApp && (
+          <>
+            <button
+              onClick={() =>
+                native?.sendMessageToApp({
+                  type: 'SCAN_COMPONENT',
+                  payload: {
+                    orderId,
+                    componentId,
+                    componentName,
+                    validBatches,
+                  },
+                })
+              }
+              className="inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:bg-gray-50"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 5v14m3-14v14m2-14v14m4-14v14m2-14v14m3-14v14M3 5h18M3 19h18"
-              />
-            </svg>
-            Сканировать код
-          </span>
-        </button>
-        <button
-          onClick={() =>
-            native?.sendMessageToApp({
-              type: 'FILLING_BUCKET_ACT',
-              payload: {
-                orderId,
-                componentId,
-                componentName,
-                validBatches,
-              },
-            })
-          }
-          className="inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:bg-gray-50"
-        >
-          <span className="flex items-center gap-2">
-            <svg
-              className="h-4 w-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+              <span className="flex items-center gap-2">
+                <svg
+                  className="h-4 w-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 5v14m3-14v14m2-14v14m4-14v14m2-14v14m3-14v14M3 5h18M3 19h18"
+                  />
+                </svg>
+                Сканировать код
+              </span>
+            </button>
+            <button
+              onClick={() =>
+                native?.sendMessageToApp({
+                  type: 'FILLING_BUCKET_ACT',
+                  payload: {
+                    orderId,
+                    componentId,
+                    componentName,
+                    validBatches,
+                  },
+                })
+              }
+              className="inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:bg-gray-50"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 5v14m3-14v14m2-14v14m4-14v14m2-14v14m3-14v14M3 5h18M3 19h18"
-              />
-            </svg>
-            Сканировать тару с заполнением
-          </span>
-        </button>
+              <span className="flex items-center gap-2">
+                <svg
+                  className="h-4 w-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 5v14m3-14v14m2-14v14m4-14v14m2-14v14m3-14v14M3 5h18M3 19h18"
+                  />
+                </svg>
+                Сканировать тару с заполнением
+              </span>
+            </button>
+          </>
+        )}
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">

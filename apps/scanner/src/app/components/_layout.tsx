@@ -4,10 +4,6 @@ export default function OrdersLayout() {
   return (
     <Stack>
       <Stack.Screen name="index" options={{ title: 'В главное меню' }} />
-      <Stack.Screen
-        name="[orderId]"
-        options={{ title: 'К заказам на производство' }}
-      />
     </Stack>
   );
 }

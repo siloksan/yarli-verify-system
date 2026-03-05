@@ -1,9 +1,10 @@
-import React, { useState, useMemo, useRef } from 'react';
+import { type FormEvent, useMemo, useState } from 'react';
 import type { BucketQRData, IBucketCreateDto } from '@repo/api';
-import { useAllBuckets, useCreateBucket } from '~/features/bucket';
-import { useAllComponents } from '~/features/components';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
+import { Link } from 'react-router';
+import { useAllBuckets, useCreateBucket } from '~/features/bucket';
+import { useAllComponents } from '~/features/components';
 
 const FORM_ELEMENTS_NAME = {
   component: 'component',
@@ -15,17 +16,17 @@ export default function BucketsPage() {
   const [error, setError] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isSubmitBtnActive, setIsSubmitBtnActive] = useState(false);
-  // Search state
+  const [componentSearchTerm, setComponentSearchTerm] = useState('');
+  const [selectedComponentId, setSelectedComponentId] = useState('');
+  const [isComponentDropdownOpen, setIsComponentDropdownOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [searchField, setSearchField] = useState<
     'all' | 'component' | 'location'
   >('all');
-  // QR state
   const [selectedBucket, setSelectedBucket] = useState<BucketQRData | null>(
     null,
   );
   const [showQRModal, setShowQRModal] = useState(false);
-  const qrPrintRef = useRef<HTMLDivElement>(null);
 
   const {
     data: buckets = [],
@@ -41,9 +42,43 @@ export default function BucketsPage() {
 
   const createBucketMutation = useCreateBucket();
 
-  const handleSubmit = (e: React.SubmitEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const form = e.currentTarget;
+  const filteredComponents = useMemo(() => {
+    const term = componentSearchTerm.trim().toLowerCase();
+
+    if (!term) {
+      return components;
+    }
+
+    return components.filter((component) =>
+      component.name.toLowerCase().includes(term),
+    );
+  }, [componentSearchTerm, components]);
+
+  const filteredBuckets = useMemo(() => {
+    if (!searchTerm.trim()) return buckets;
+    const term = searchTerm.toLowerCase().trim();
+
+    return buckets.filter((bucket) => {
+      if (searchField === 'component') {
+        return bucket.component.name.toLowerCase().includes(term);
+      }
+      if (searchField === 'location') {
+        return bucket.location?.toLowerCase().includes(term) || false;
+      }
+      return (
+        bucket.component.name.toLowerCase().includes(term) ||
+        bucket.creator.toLowerCase().includes(term) ||
+        bucket.location?.toLowerCase().includes(term) ||
+        false
+      );
+    });
+  }, [buckets, searchField, searchTerm]);
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError('');
+
+    const form = event.currentTarget;
     const formData = new FormData(form);
 
     const componentId = formData.get(FORM_ELEMENTS_NAME.component) as
@@ -52,57 +87,37 @@ export default function BucketsPage() {
     const creator = formData.get(FORM_ELEMENTS_NAME.creator) as string | null;
     const location = formData.get(FORM_ELEMENTS_NAME.location) as string | null;
 
-    if (componentId && creator) {
-      setIsSubmitBtnActive(true);
-
-      const createBucketData: IBucketCreateDto = {
-        componentId: componentId.trim(),
-        creator: creator.trim(),
-        ...(location && location.trim() ? { location: location.trim() } : {}),
-      };
-
-      createBucketMutation.mutate(createBucketData, {
-        onSuccess: () => {
-          form.reset();
-          setIsSubmitBtnActive(false);
-          setIsFormOpen(false);
-        },
-        onError: (error) => {
-          console.error('Ошибка создания ёмкости:', error);
-          if (error instanceof Error) {
-            setError(error.message);
-          }
-          setIsSubmitBtnActive(false);
-        },
-      });
-    } else {
-      console.error('Пожалуйста, заполните обязательные поля');
-    }
-  };
-
-  // Filter buckets based on search
-  const filteredBuckets = useMemo(() => {
-    if (!searchTerm.trim()) return buckets;
-
-    return buckets.filter((bucket) => {
-      const term = searchTerm.toLowerCase().trim();
-
-      switch (searchField) {
-        case 'component':
-          return bucket.component.name.toLowerCase().includes(term);
-        case 'location':
-          return bucket.location?.toLowerCase().includes(term) || false;
-        case 'all':
-        default:
-          return (
-            bucket.component.name.toLowerCase().includes(term) ||
-            bucket.creator.toLowerCase().includes(term) ||
-            bucket.location?.toLowerCase().includes(term) ||
-            false
-          );
+    if (!componentId || !creator) {
+      if (!componentId) {
+        setError('Выберите компонент из списка');
       }
+      return;
+    }
+
+    setIsSubmitBtnActive(true);
+
+    const createBucketData: IBucketCreateDto = {
+      componentId: componentId.trim(),
+      creator: creator.trim(),
+      ...(location && location.trim() ? { location: location.trim() } : {}),
+    };
+
+    createBucketMutation.mutate(createBucketData, {
+      onSuccess: () => {
+        form.reset();
+        setComponentSearchTerm('');
+        setSelectedComponentId('');
+        setIsSubmitBtnActive(false);
+        setIsFormOpen(false);
+      },
+      onError: (submitError) => {
+        if (submitError instanceof Error) {
+          setError(submitError.message);
+        }
+        setIsSubmitBtnActive(false);
+      },
     });
-  }, [buckets, searchTerm, searchField]);
+  };
 
   const handleShowQR = (bucket: BucketQRData) => {
     setSelectedBucket(bucket);
@@ -110,11 +125,11 @@ export default function BucketsPage() {
   };
 
   const handlePrintQR = () => {
-    if (!qrPrintRef.current || !selectedBucket) return;
+    if (!selectedBucket) return;
 
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
-      alert('Пожалуйста, разрешите всплывающие окна для печати');
+      alert('Разрешите всплывающие окна для печати');
       return;
     }
 
@@ -176,7 +191,7 @@ export default function BucketsPage() {
               font-size: 14px;
             }
             .qr-info-label {
-              width: 100px;
+              width: 120px;
               color: #6b7280;
             }
             .qr-info-value {
@@ -206,7 +221,6 @@ export default function BucketsPage() {
             </div>
             <div class="qr-title">${selectedBucket.componentName}</div>
             <div class="qr-subtitle">ID: ${selectedBucket.id.slice(0, 8)}...</div>
-            
             <div class="qr-info">
               <div class="qr-info-item">
                 <span class="qr-info-label">Компонент:</span>
@@ -231,7 +245,6 @@ export default function BucketsPage() {
                 <span class="qr-info-value">${format(new Date(), 'dd.MM.yyyy')}</span>
               </div>
             </div>
-            
             <div class="qr-footer">
               Сканируйте QR-код для получения информации о таре
             </div>
@@ -251,71 +264,105 @@ export default function BucketsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 safe-padding">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
-        {/* Header */}
-        <header className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold text-gray-900">
-              Ёмкости промежуточного хранения
-            </h1>
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,#dbeafe_0%,#f8fafc_45%,#f1f5f9_100%)] p-3 safe-padding sm:p-4">
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 sm:gap-5">
+        <header className="rounded-3xl border border-slate-200/60 bg-white/80 p-4 shadow-sm backdrop-blur sm:p-5">
+          <Link
+            to="/"
+            className="inline-flex text-sm font-semibold text-slate-500 transition hover:text-slate-700"
+          >
+            В главное меню
+          </Link>
+          <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
+            <div>
+              <h1 className="text-2xl font-semibold text-slate-900">
+                Емкости промежуточного хранения
+              </h1>
+              <p className="mt-1 text-sm text-slate-500">
+                Управление тарой, печать QR-кодов и быстрый поиск
+              </p>
+            </div>
           </div>
-          <div className="flex items-center gap-3">
+
+          <div className="mt-4">
             <button
-              onClick={() => setIsFormOpen(!isFormOpen)}
-              className="inline-flex items-center gap-1 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
+              type="button"
+              onClick={() => setIsFormOpen((prev) => !prev)}
+              className="inline-flex w-full items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 sm:w-auto"
             >
-              <svg
-                className="h-5 w-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 4v16m8-8H4"
-                />
-              </svg>
-              Добавить новую ёмкость в систему
+              {isFormOpen ? 'Скрыть форму' : 'Добавить новую емкость'}
             </button>
           </div>
         </header>
 
-        {/* Create Form - Collapsible */}
         {isFormOpen && (
-          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="mb-4 text-lg font-semibold text-gray-900">
+          <section className="rounded-3xl border border-slate-200/80 bg-white/90 p-4 shadow-sm sm:p-5">
+            <h2 className="text-lg font-semibold text-slate-900">
               Новая емкость
             </h2>
             <form
               onSubmit={handleSubmit}
-              className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4"
+              className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4"
             >
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-700">
-                  Компонент
+              <div className="relative">
+                <label className="text-sm font-medium text-slate-700">
+                  Component
                 </label>
-                <select
-                  name={FORM_ELEMENTS_NAME.component}
-                  required
+                <input
+                  type="text"
+                  value={componentSearchTerm}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    setComponentSearchTerm(value);
+                    setIsComponentDropdownOpen(true);
+
+                    const exactComponent = components.find(
+                      (component) =>
+                        component.name.toLowerCase() === value.trim().toLowerCase(),
+                    );
+                    setSelectedComponentId(exactComponent?.id ?? '');
+                  }}
+                  onFocus={() => setIsComponentDropdownOpen(true)}
+                  onBlur={() => {
+                    window.setTimeout(() => setIsComponentDropdownOpen(false), 120);
+                  }}
+                  placeholder="Type to search component"
                   disabled={componentsLoading}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100"
-                >
-                  <option value="">
-                    {componentsLoading ? 'Загрузка...' : 'Выберите компонент'}
-                  </option>
-                  {components.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
+                  className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 disabled:bg-slate-100"
+                />
+                <input
+                  type="hidden"
+                  name={FORM_ELEMENTS_NAME.component}
+                  value={selectedComponentId}
+                />
+                {isComponentDropdownOpen && !componentsLoading && (
+                  <div className="absolute z-20 mt-1 max-h-56 w-full overflow-auto rounded-xl border border-slate-200 bg-white shadow-lg">
+                    {filteredComponents.map((component) => (
+                      <button
+                        key={component.id}
+                        type="button"
+                        onMouseDown={(event) => event.preventDefault()}
+                        onClick={() => {
+                          setComponentSearchTerm(component.name);
+                          setSelectedComponentId(component.id);
+                          setIsComponentDropdownOpen(false);
+                        }}
+                        className="block w-full px-3 py-2 text-left text-sm text-slate-700 transition hover:bg-slate-50"
+                      >
+                        {component.name}
+                      </button>
+                    ))}
+                    {filteredComponents.length === 0 && (
+                      <p className="px-3 py-2 text-sm text-slate-500">
+                        No matches found
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
 
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-700">
+              <div>
+                <label className="text-sm font-medium text-slate-700">
                   Сотрудник
                 </label>
                 <input
@@ -323,572 +370,253 @@ export default function BucketsPage() {
                   name={FORM_ELEMENTS_NAME.creator}
                   required
                   placeholder="ФИО сотрудника"
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-700">
+              <div>
+                <label className="text-sm font-medium text-slate-700">
                   Расположение
                 </label>
                 <input
                   type="text"
                   name={FORM_ELEMENTS_NAME.location}
                   placeholder="Стеллаж, ряд, место"
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
                 />
               </div>
 
-              <div className="flex items-end gap-2">
+              <div className="grid grid-cols-2 gap-2 sm:col-span-2 lg:col-span-1 lg:grid-cols-1">
                 <button
                   type="submit"
-                  disabled={isSubmitBtnActive}
-                  className="flex-1 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:bg-gray-400"
+                  disabled={isSubmitBtnActive || componentsError}
+                  className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
                 >
                   {isSubmitBtnActive ? 'Создание...' : 'Создать'}
                 </button>
                 <button
                   type="button"
                   onClick={() => setIsFormOpen(false)}
-                  className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
+                  className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
                 >
                   Отмена
                 </button>
               </div>
             </form>
             {error && (
-              <div className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">
+              <div className="mt-3 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
                 {error}
               </div>
             )}
-          </div>
+          </section>
         )}
 
-        {/* Search Bar */}
         {!bucketsLoading && !bucketsError && buckets.length > 0 && (
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <div className="relative flex-1">
-              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                <svg
-                  className="h-5 w-5 text-gray-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                  />
-                </svg>
-              </div>
+          <section className="rounded-3xl border border-slate-200/80 bg-white/90 p-4 shadow-sm sm:p-5">
+            <div className="grid grid-cols-1 gap-3">
               <input
                 type="text"
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Поиск по компоненту или расположению..."
-                className="w-full rounded-lg border border-gray-300 bg-white py-2 pl-10 pr-4 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                onChange={(event) => setSearchTerm(event.target.value)}
+                placeholder="Поиск по компоненту, сотруднику или расположению"
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
               />
-              {searchTerm && (
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                 <button
-                  onClick={() => setSearchTerm('')}
-                  className="absolute inset-y-0 right-0 flex items-center pr-3"
+                  type="button"
+                  onClick={() => setSearchField('all')}
+                  className={`rounded-xl px-3 py-2 text-sm font-semibold transition ${
+                    searchField === 'all'
+                      ? 'bg-slate-900 text-white'
+                      : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
+                  }`}
                 >
-                  <svg
-                    className="h-5 w-5 text-gray-400 hover:text-gray-600"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
+                  Везде
                 </button>
-              )}
+                <button
+                  type="button"
+                  onClick={() => setSearchField('component')}
+                  className={`rounded-xl px-3 py-2 text-sm font-semibold transition ${
+                    searchField === 'component'
+                      ? 'bg-slate-900 text-white'
+                      : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
+                  }`}
+                >
+                  По компоненту
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSearchField('location')}
+                  className={`rounded-xl px-3 py-2 text-sm font-semibold transition ${
+                    searchField === 'location'
+                      ? 'bg-slate-900 text-white'
+                      : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
+                  }`}
+                >
+                  По расположению
+                </button>
+              </div>
             </div>
-
-            <div className="flex gap-2">
-              <button
-                onClick={() => setSearchField('all')}
-                className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
-                  searchField === 'all'
-                    ? 'bg-blue-600 text-white'
-                    : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
-                }`}
-              >
-                Везде
-              </button>
-              <button
-                onClick={() => setSearchField('component')}
-                className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
-                  searchField === 'component'
-                    ? 'bg-blue-600 text-white'
-                    : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
-                }`}
-              >
-                По компоненту
-              </button>
-              <button
-                onClick={() => setSearchField('location')}
-                className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
-                  searchField === 'location'
-                    ? 'bg-blue-600 text-white'
-                    : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
-                }`}
-              >
-                По расположению
-              </button>
-            </div>
-          </div>
+          </section>
         )}
 
-        {/* Loading State */}
         {bucketsLoading && (
-          <div className="rounded-xl border border-dashed border-gray-300 bg-white p-12 text-center">
-            <div className="flex flex-col items-center gap-2">
-              <div className="h-8 w-8 animate-spin rounded-full border-3 border-gray-200 border-t-blue-600"></div>
-              <p className="text-sm text-gray-500">Загрузка емкостей...</p>
-            </div>
+          <div className="rounded-2xl border border-dashed border-slate-300 bg-white/90 p-6 text-center text-slate-500">
+            Загрузка емкостей...
           </div>
         )}
 
-        {/* Error State */}
         {bucketsError && (
-          <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">
-            <div className="flex items-center gap-2">
-              <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  fillRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              Не удалось загрузить список емкостей
-            </div>
+          <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">
+            Не удалось загрузить список емкостей
           </div>
         )}
 
-        {/* Empty State */}
         {!bucketsLoading && !bucketsError && buckets.length === 0 && (
-          <div className="rounded-xl border border-dashed border-gray-300 bg-white p-12 text-center">
-            <svg
-              className="mx-auto h-12 w-12 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1.5}
-                d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"
-              />
-            </svg>
-            <h3 className="mt-2 text-sm font-medium text-gray-900">
-              Нет емкостей
-            </h3>
-            <p className="mt-1 text-sm text-gray-500">
-              Создайте новую ёмкость чтобы увидеть список доступных для заплнения
-            </p>
-            <button
-              onClick={() => setIsFormOpen(true)}
-              className="mt-4 inline-flex items-center gap-1 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-            >
-              <svg
-                className="h-5 w-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 4v16m8-8H4"
-                />
-              </svg>
-              Добавить первую емкость
-            </button>
+          <div className="rounded-2xl border border-dashed border-slate-300 bg-white/90 p-6 text-center text-slate-500">
+            Емкости не найдены. Создайте первую емкость, чтобы начать работу.
           </div>
         )}
 
-        {/* No Search Results */}
         {!bucketsLoading &&
           !bucketsError &&
           buckets.length > 0 &&
           filteredBuckets.length === 0 && (
-            <div className="rounded-xl border border-dashed border-gray-300 bg-white p-8 text-center">
-              <svg
-                className="mx-auto h-10 w-10 text-gray-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.5}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
-              <h3 className="mt-2 text-sm font-medium text-gray-900">
-                Ничего не найдено
-              </h3>
-              <p className="mt-1 text-sm text-gray-500">
-                По запросу «{searchTerm}» ничего не найдено
-              </p>
-              <button
-                onClick={() => {
-                  setSearchTerm('');
-                  setSearchField('all');
-                }}
-                className="mt-4 text-sm text-blue-600 hover:text-blue-700"
-              >
-                Сбросить поиск
-              </button>
+            <div className="rounded-2xl border border-dashed border-slate-300 bg-white/90 p-6 text-center text-slate-500">
+              По запросу «{searchTerm}» ничего не найдено.
             </div>
           )}
 
-        {/* Buckets List - Card View for Mobile, Table for Desktop */}
         {!bucketsLoading && !bucketsError && filteredBuckets.length > 0 && (
-          <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-            {/* Desktop Table View */}
-            <div className="hidden md:block">
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                      Компонент
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                      Кто занёс в систему
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                      Расположение
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                      Дата создания
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                      Статус
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                      Действия
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 bg-white">
-                  {filteredBuckets.map((bucket) => (
-                    <tr key={bucket.id} className="hover:bg-gray-50">
-                      <td className="whitespace-nowrap px-6 py-4">
-                        <div className="text-sm font-medium text-gray-900">
-                          {bucket.component.name}
-                        </div>
-                      </td>
-                      <td className="whitespace-nowrap px-6 py-4">
-                        <div className="text-sm text-gray-700">
-                          {bucket.creator}
-                        </div>
-                      </td>
-                      <td className="whitespace-nowrap px-6 py-4">
-                        <div className="text-sm text-gray-700">
-                          {bucket.location ? (
-                            <span className="inline-flex items-center gap-1">
-                              <svg
-                                className="h-4 w-4 text-gray-400"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                                />
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                                />
-                              </svg>
-                              {bucket.location}
-                            </span>
-                          ) : (
-                            <span className="text-gray-400">—</span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="whitespace-nowrap px-6 py-4">
-                        <div className="text-sm text-gray-700">
-                          {format(
-                            new Date(bucket.createdAt),
-                            'dd MMM yyyy, HH:mm',
-                            { locale: ru },
-                          )}
-                        </div>
-                      </td>
-                      <td className="whitespace-nowrap px-6 py-4">
-                        <span
-                          className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${getStatusColor(bucket.createdAt)}`}
-                        >
-                          {getStatusText(bucket.createdAt)}
-                        </span>
-                      </td>
-                      <td className="whitespace-nowrap px-6 py-4">
-                        <button
-                          onClick={() =>
-                            handleShowQR({
-                              id: bucket.id,
-                              componentName: bucket.component.name,
-                              componentId: bucket.component.id,
-                              creator: bucket.creator,
-                              location: bucket.location,
-                            })
-                          }
-                          className="inline-flex items-center gap-1 rounded-lg bg-purple-50 px-3 py-1.5 text-xs font-medium text-purple-700 transition hover:bg-purple-100"
-                          title="Показать QR-код"
-                        >
-                          <svg
-                            className="h-4 w-4"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"
-                            />
-                          </svg>
-                          QR
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Mobile Card View */}
-            <div className="divide-y divide-gray-200 md:hidden">
-              {filteredBuckets.map((bucket) => (
-                <div key={bucket.id} className="p-4 hover:bg-gray-50">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-2 flex-1">
-                      <p className="text-sm font-medium text-gray-900">
-                        {bucket.component.name}
-                      </p>
-                      <div className="space-y-1">
-                        <p className="flex items-center gap-1 text-xs text-gray-500">
-                          <svg
-                            className="h-3.5 w-3.5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                            />
-                          </svg>
-                          {bucket.creator}
-                        </p>
-                        {bucket.location && (
-                          <p className="flex items-center gap-1 text-xs text-gray-500">
-                            <svg
-                              className="h-3.5 w-3.5"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                              />
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                              />
-                            </svg>
-                            {bucket.location}
-                          </p>
-                        )}
-                        <p className="flex items-center gap-1 text-xs text-gray-500">
-                          <svg
-                            className="h-3.5 w-3.5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                            />
-                          </svg>
-                          {format(new Date(bucket.createdAt), 'dd MMM yyyy', {
-                            locale: ru,
-                          })}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex flex-col items-end gap-2">
-                      <span
-                        className={`rounded-full px-2 py-1 text-xs font-semibold ${getStatusColor(bucket.createdAt)}`}
-                      >
-                        {getStatusText(bucket.createdAt)}
-                      </span>
-                      <button
-                        onClick={() =>
-                          handleShowQR({
-                            id: bucket.id,
-                            componentName: bucket.component.name,
-                            componentId: bucket.component.id,
-                            creator: bucket.creator,
-                            location: bucket.location,
-                          })
-                        }
-                        className="inline-flex items-center gap-1 rounded-lg bg-purple-50 px-2 py-1 text-xs font-medium text-purple-700 transition hover:bg-purple-100"
-                      >
-                        <svg
-                          className="h-3.5 w-3.5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"
-                          />
-                        </svg>
-                        QR
-                      </button>
-                    </div>
+          <div className="grid gap-3">
+            {filteredBuckets.map((bucket) => (
+              <article
+                key={bucket.id}
+                className="rounded-3xl border border-slate-200/80 bg-white/90 p-4 shadow-sm sm:p-5"
+              >
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">
+                      Емкость
+                    </p>
+                    <h3 className="mt-1 truncate text-lg font-semibold text-slate-900 sm:text-xl">
+                      {bucket.component.name}
+                    </h3>
+                    <p className="mt-2 text-sm text-slate-600">
+                      Занес в систему:{' '}
+                      <span className="font-medium">{bucket.creator}</span>
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`rounded-full px-3 py-1 text-xs font-semibold ${getStatusColor(bucket.createdAt)}`}
+                    >
+                      {getStatusText(bucket.createdAt)}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleShowQR({
+                          id: bucket.id,
+                          componentName: bucket.component.name,
+                          componentId: bucket.component.id,
+                          creator: bucket.creator,
+                          location: bucket.location,
+                        })
+                      }
+                      className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700"
+                    >
+                      QR-код
+                    </button>
                   </div>
                 </div>
-              ))}
-            </div>
+
+                <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5">
+                    <p className="text-xs uppercase tracking-wide text-slate-500">
+                      Расположение
+                    </p>
+                    <p className="mt-1 text-sm font-semibold text-slate-900">
+                      {bucket.location || 'Не указано'}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5">
+                    <p className="text-xs uppercase tracking-wide text-slate-500">
+                      Дата создания
+                    </p>
+                    <p className="mt-1 text-sm font-semibold text-slate-900">
+                      {format(
+                        new Date(bucket.createdAt),
+                        'dd MMM yyyy, HH:mm',
+                        {
+                          locale: ru,
+                        },
+                      )}
+                    </p>
+                  </div>
+                </div>
+              </article>
+            ))}
           </div>
         )}
       </div>
 
-      {/* QR Code Modal */}
       {showQRModal && selectedBucket && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-          <div
-            ref={qrPrintRef}
-            className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl"
-          >
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-900">
-                QR-код для тары
-              </h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-5 shadow-xl">
+            <div className="mb-4 flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">
+                  QR данные
+                </p>
+                <h3 className="mt-1 text-base font-semibold text-slate-900">
+                  {selectedBucket.componentName}
+                </h3>
+                <p className="text-sm text-slate-500">
+                  ID: {selectedBucket.id.slice(0, 8)}...
+                </p>
+              </div>
               <button
+                type="button"
                 onClick={() => setShowQRModal(false)}
-                className="rounded-lg p-1 hover:bg-gray-100"
+                className="rounded-xl px-3 py-2 text-sm font-medium text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
               >
-                <svg
-                  className="h-5 w-5 text-gray-500"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
+                Закрыть
               </button>
             </div>
 
-            <div className="flex flex-col items-center">
-              {/* QR Code Image */}
-              <div className="mb-4 rounded-lg border border-gray-200 bg-white p-4">
-                <img
-                  src={createQrImageUrl({
-                    id: selectedBucket.id,
-                    componentId: selectedBucket.componentId,
-                    componentName: selectedBucket.componentName,
-                    creator: selectedBucket.creator,
-                    location: selectedBucket.location || '',
-                  })}
-                  alt={`QR код для ${selectedBucket.componentName}`}
-                  className="h-64 w-64"
-                />
-              </div>
-
-              {/* Bucket Info */}
-              <div className="mb-6 w-full space-y-2 rounded-lg bg-gray-50 p-4">
-                <p className="text-sm text-gray-600">
-                  <span className="font-medium">Компонент:</span>{' '}
-                  {selectedBucket.componentName}
-                </p>
-                <p className="text-sm text-gray-600">
-                  <span className="font-medium">Занёс в систему:</span>{' '}
-                  {selectedBucket.creator}
-                </p>
-                {selectedBucket.location && (
-                  <p className="text-sm text-gray-600">
-                    <span className="font-medium">Расположение:</span>{' '}
-                    {selectedBucket.location}
-                  </p>
-                )}
-                <p className="text-sm text-gray-600">
-                  <span className="font-medium">ID:</span>{' '}
-                  {selectedBucket.id.slice(0, 8)}...
-                </p>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex w-full gap-3">
-                <button
-                  onClick={handlePrintQR}
-                  className="flex-1 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
-                >
-                  <span className="flex items-center justify-center gap-2">
-                    <svg
-                      className="h-4 w-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
-                      />
-                    </svg>
-                    Печать
-                  </span>
-                </button>
-                <button
-                  onClick={() => setShowQRModal(false)}
-                  className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
-                >
-                  Закрыть
-                </button>
-              </div>
+            <div className="flex justify-center rounded-2xl border border-slate-200 bg-slate-50 p-3">
+              <img
+                src={createQrImageUrl({
+                  id: selectedBucket.id,
+                  componentId: selectedBucket.componentId,
+                  componentName: selectedBucket.componentName,
+                  creator: selectedBucket.creator,
+                  location: selectedBucket.location || '',
+                })}
+                alt={`QR код для ${selectedBucket.componentName}`}
+                className="h-64 w-64"
+              />
             </div>
+
+            <div className="mt-3 rounded-xl bg-slate-50 p-3 text-sm text-slate-700">
+              <p>
+                <span className="font-semibold">Создатель:</span>{' '}
+                {selectedBucket.creator}
+              </p>
+              <p className="mt-1">
+                <span className="font-semibold">Расположение:</span>{' '}
+                {selectedBucket.location || 'Не указано'}
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={handlePrintQR}
+              className="mt-3 inline-flex w-full items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700"
+            >
+              Печать QR-кода
+            </button>
           </div>
         </div>
       )}
@@ -907,7 +635,7 @@ function getStatusColor(createdAt: string) {
     (Date.now() - new Date(createdAt).getTime()) / (1000 * 60 * 60 * 24),
   );
   if (daysOld < 7) return 'bg-green-100 text-green-800';
-  if (daysOld < 30) return 'bg-yellow-100 text-yellow-800';
+  if (daysOld < 30) return 'bg-amber-100 text-amber-800';
   return 'bg-orange-100 text-orange-800';
 }
 
@@ -917,7 +645,6 @@ function getStatusText(createdAt: string) {
   );
   if (daysOld === 0) return 'Сегодня';
   if (daysOld === 1) return 'Вчера';
-  if (daysOld < 7) return `${daysOld} дн.`;
   if (daysOld < 30) return `${daysOld} дн.`;
   return `${Math.floor(daysOld / 30)} мес.`;
 }

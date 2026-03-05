@@ -2,6 +2,7 @@
 import { Link } from 'react-router';
 import { OrderStatus } from '@repo/api';
 import { useAllOrders } from '../features/orders/hooks/orders.hook';
+import { usePlatform } from '~/shared/hooks/usePlatform';
 
 function formatWeight(weight?: string) {
   if (!weight) return 'Не указан';
@@ -31,6 +32,7 @@ export default function OrdersPage() {
     isError,
     error,
   } = useAllOrders([OrderStatus.OPEN, OrderStatus.IN_PROGRESS]);
+  const { getUrl } = usePlatform();
 
   const normalizedSearch = search.trim().toLowerCase();
   const filteredOrders = useMemo(() => {
@@ -108,7 +110,10 @@ export default function OrdersPage() {
         <div className="grid gap-3">
           {filteredOrders.map((order) => (
             <Link
-              to={`scanner:///orders/${order.id}`}
+              to={getUrl({
+                appUrl: `scanner:///orders/${order.id}`,
+                webUrl: `/orders/${order.id}`,
+              })}
               key={order.id}
               className="group rounded-3xl border border-slate-200/80 bg-white/90 p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md"
             >

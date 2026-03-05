@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import { useAllComponents } from '~/features/components/hooks/components.hook';
+import { usePlatform } from '~/shared/hooks/usePlatform';
 
 type BarcodeState = {
   imageUrl: string;
@@ -16,6 +17,7 @@ export default function ComponentsPage() {
   const [search, setSearch] = useState('');
   const [searchInput, setSearchInput] = useState('');
   const [barcodeState, setBarcodeState] = useState<BarcodeState | null>(null);
+  const { getUrl, isApp } = usePlatform();
 
   const {
     data: components,
@@ -112,74 +114,80 @@ export default function ComponentsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 safe-padding">
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
-        <header className="flex flex-col gap-2">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,#dbeafe_0%,#f8fafc_45%,#f1f5f9_100%)] p-4 safe-padding">
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-5">
+        <header className="rounded-3xl border border-slate-200/60 bg-white/80 p-5 shadow-sm backdrop-blur">
           <Link
-            to="/"
-            className="text-sm font-semibold text-gray-500 transition hover:text-gray-700"
+            to={getUrl({
+              appUrl: 'scanner:///',
+              webUrl: '/',
+            })}
+            className="inline-flex text-sm font-semibold text-slate-500 transition hover:text-slate-700"
           >
-            в Главное меню
+            В главное меню
           </Link>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
             <div>
-              <h1 className="text-2xl font-semibold text-gray-900">
+              <h1 className="text-2xl font-semibold text-slate-900">
                 Справочник сырья и полуфабрикатов
               </h1>
+              <p className="mt-1 text-sm text-slate-500">
+                Поиск по номенклатуре и партиям компонентов
+              </p>
+            </div>
+            <div className="rounded-2xl bg-slate-900 px-4 py-3 text-sm font-medium text-slate-100">
+              Номенклатур: {components?.length ?? 0} | Партий: {totalBatchCount}
             </div>
           </div>
-        </header>
-
-        <section className="rounded-2xl border border-gray-200 bg-white p-4">
           <form
             onSubmit={(event) => {
               event.preventDefault();
               setSearch(searchInput.trim());
             }}
-            className="flex flex-col gap-2 sm:flex-row"
+            className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto]"
           >
             <input
               value={searchInput}
               onChange={(event) => setSearchInput(event.target.value)}
-              placeholder="Поиск по номенклотуре или партии"
-              className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm text-gray-700 outline-none transition focus:border-gray-400"
+              placeholder="Введите название компонента или номер партии"
+              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
             />
             <button
               type="submit"
-              className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:bg-gray-50"
+              className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700"
             >
               Найти
             </button>
           </form>
-        </section>
+        </header>
 
         {isLoading && (
-          <div className="rounded-xl border border-dashed border-gray-300 bg-white p-6 text-center text-gray-500">
+          <div className="rounded-2xl border border-dashed border-slate-300 bg-white/90 p-6 text-center text-slate-500">
             Загрузка компонентов...
           </div>
         )}
 
         {isError && (
-          <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">
-            Не удалось поучить список сырья и полуфабрикатов
+          <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">
+            Не удалось получить список сырья и полуфабрикатов
             {error instanceof Error ? ` ${error.message}` : ''}
           </div>
         )}
 
         {!isLoading && !isError && (components?.length ?? 0) === 0 && (
-          <div className="rounded-xl border border-dashed border-gray-300 bg-white p-6 text-center text-gray-500">
-            Сырьё и полуфабрикаты не найдены.
+          <div className="rounded-2xl border border-dashed border-slate-300 bg-white/90 p-6 text-center text-slate-500">
+            Сырье и полуфабрикаты не найдены.
           </div>
         )}
 
-        <div className="flex flex-col gap-3">
+        <div className="grid gap-3">
           {components?.map((component) => {
             const isExpanded = expandedComponentId === component.id;
 
             return (
               <div
                 key={component.id}
-                className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm"
+                className="rounded-3xl border border-slate-200/80 bg-white/90 p-5 shadow-sm"
               >
                 <button
                   type="button"
@@ -188,23 +196,23 @@ export default function ComponentsPage() {
                       prev === component.id ? null : component.id,
                     )
                   }
-                  className="flex w-full items-center justify-between gap-3 text-left"
+                  className="flex w-full items-center justify-between gap-4 text-left"
                 >
-                  <div className="min-w-0">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">
                       Компонент
                     </p>
-                    <h2 className="truncate text-lg font-semibold text-gray-900">
+                    <h2 className="mt-1 truncate text-xl font-semibold text-slate-900">
                       {component.name}
                     </h2>
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600">
+                    <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-blue-700">
                       {component.batches.length} партий
                     </span>
                     <span
-                      className={`text-xs font-semibold text-gray-500 transition ${
+                      className={`text-sm font-semibold text-slate-500 transition ${
                         isExpanded ? 'rotate-180' : ''
                       }`}
                     >
@@ -214,10 +222,10 @@ export default function ComponentsPage() {
                 </button>
 
                 {isExpanded && (
-                  <div className="mt-4 flex flex-col gap-2 border-t border-gray-100 pt-3">
+                  <div className="mt-4 grid gap-2 border-t border-slate-200/80 pt-4">
                     {component.batches.length === 0 && (
-                      <div className="rounded-xl border border-dashed border-gray-300 p-3 text-sm text-gray-500">
-                        нет партий.
+                      <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-4 text-sm text-slate-500">
+                        У компонента нет партий.
                       </div>
                     )}
 
@@ -225,14 +233,14 @@ export default function ComponentsPage() {
                       const { barcode, batchNumber, id } = batch;
                       return (
                         <div
-                          key={`${component.id}-${batch}`}
-                          className="flex flex-col gap-2 rounded-xl border border-gray-200 bg-gray-50 p-3 sm:flex-row sm:items-center sm:justify-between"
+                          key={`${component.id}-${id}`}
+                          className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4 sm:flex-row sm:items-center sm:justify-between"
                         >
                           <div className="min-w-0">
-                            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                            <p className="text-xs uppercase tracking-wide text-slate-500">
                               Партия
                             </p>
-                            <p className="truncate text-sm font-semibold text-gray-700">
+                            <p className="mt-1 truncate text-sm font-semibold text-slate-900">
                               {batchNumber}
                             </p>
                           </div>
@@ -246,7 +254,7 @@ export default function ComponentsPage() {
                                 imageUrl: createEan13ImageUrl(barcode),
                               });
                             }}
-                            className="inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:bg-gray-100"
+                            className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700"
                           >
                             Показать штрихкод
                           </button>
@@ -262,47 +270,47 @@ export default function ComponentsPage() {
       </div>
 
       {barcodeState && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-sm rounded-2xl bg-white p-4 shadow-lg">
-            <div className="mb-3 flex items-start justify-between gap-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-5 shadow-xl">
+            <div className="mb-4 flex items-start justify-between gap-3">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                <p className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">
                   EAN-13 данные
                 </p>
-                <h3 className="text-base font-semibold text-gray-900">
+                <h3 className="mt-1 text-base font-semibold text-slate-900">
                   {barcodeState.componentName}
                 </h3>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-slate-500">
                   Партия: {barcodeState.batch}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setBarcodeState(null)}
-                className="rounded-lg px-2 py-1 text-sm text-gray-500 hover:bg-gray-100"
+                className="rounded-xl px-3 py-2 text-sm font-medium text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
               >
                 Закрыть
               </button>
             </div>
 
-            <div className="flex justify-center rounded-xl border border-gray-200 bg-gray-50 p-3">
+            <div className="flex justify-center rounded-2xl border border-slate-200 bg-slate-50 p-3">
               <img
                 src={barcodeState.imageUrl}
                 alt={`EAN-13 ${barcodeState.componentName} ${barcodeState.batch}`}
-                className="w-full max-w-[320px]"
+                className="w-full max-w-[340px]"
               />
             </div>
 
-            <p className="mt-3 rounded-lg bg-gray-50 p-2 text-center font-mono text-sm font-semibold tracking-wider text-gray-700">
+            <p className="mt-3 rounded-xl bg-slate-50 p-3 text-center font-mono text-sm font-semibold tracking-wider text-slate-700">
               {barcodeState.ean13}
             </p>
 
             <button
               type="button"
               onClick={handlePrintBarcode}
-              className="mt-3 inline-flex w-full items-center justify-center rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:bg-gray-100"
+              className="mt-3 inline-flex w-full items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700"
             >
-              Print EAN-13
+              Печать EAN-13
             </button>
           </div>
         </div>

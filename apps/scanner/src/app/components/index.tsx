@@ -2,7 +2,9 @@ import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { WEB_CLIENT_URL } from '@/src/shared/constants/environments.constants';
 import { useRef, useState } from 'react';
-import { createWebPath } from '../shared/helpers';
+import { createWebPath } from '@/src/shared/helpers';
+
+const webSourceUrl = `${WEB_CLIENT_URL}/components`;
 
 export default function MainMenu() {
   const webViewRef = useRef<WebView>(null);
@@ -15,7 +17,6 @@ export default function MainMenu() {
 
     setHasError(true);
 
-    // Set appropriate error message
     if (nativeEvent.description?.includes('net::ERR_CONNECTION_REFUSED')) {
       setErrorMessage(
         'Не удается подключиться к серверу. Проверьте, запущен ли веб-клиент.',
@@ -69,7 +70,7 @@ export default function MainMenu() {
       <WebView
         ref={webViewRef}
         style={styles.webview}
-        source={{ uri: createWebPath(WEB_CLIENT_URL) }}
+        source={{ uri: createWebPath(webSourceUrl) }}
         onError={handleError}
         onHttpError={handleError}
         onLoadStart={handleLoadStart}

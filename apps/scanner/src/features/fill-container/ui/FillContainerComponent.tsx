@@ -3,6 +3,7 @@ import { useState } from 'react';
 import {
   Dimensions,
   Pressable,
+  ScrollView,
   StatusBar,
   StyleSheet,
   Text,
@@ -11,12 +12,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useModal } from '@/src/shared/modal';
-
-import {
-  ErrorState,
-  useFillContainer,
-  FillingState,
-} from '../hooks/useFillContainer';
 import {
   CameraInstructions,
   CameraPermission,
@@ -24,6 +19,13 @@ import {
   ScannerCamera,
   ScannerOverlay,
 } from '@/src/shared/ui';
+
+import {
+  ErrorState,
+  FillingState,
+  STEPS_DICTIONARY,
+  useFillContainer,
+} from '../hooks/useFillContainer';
 
 const { width } = Dimensions.get('window');
 const SCANNER_SIZE = width * 0.8;
@@ -56,10 +58,19 @@ export function FillContainerComponent() {
 
   const bucketData = getBucketData(state, error);
   const componentData = getComponentData(state, error);
-  return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#000000" />
+  const isScannedSuccess = state.step === 'SCAN_COMPLETED';
 
+  const actionTitle = isScannerModeAvailable
+    ? 'Включить сканирование'
+    : 'Инструкция по использованию';
+
+  const onActionPress = isScannerModeAvailable
+    ? resetScannerBottomBtn
+    : showInstruction;
+
+  return (
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+      <StatusBar barStyle="light-content" backgroundColor="#000000" />
       <View style={styles.cameraContainer}>
         <ScannerCamera
           torch={torch}
@@ -72,45 +83,36 @@ export function FillContainerComponent() {
           onToggleTorch={() => setTorch((prev) => !prev)}
         />
       </View>
-
       <View style={styles.instructions}>
-        <View style={styles.targetInfoCard}>
-          <Text style={styles.targetInfoTitle}>Flow state</Text>
-          <Text style={styles.targetInfoText}>{state.step}</Text>
-          {bucketData?.component.name && (
-            <Text style={styles.targetInfoTitle}>
-              Ёмкость c{' '}
-              <Text style={styles.targetInfoText}>
-                {bucketData?.component.name}
-              </Text>
-            </Text>
-          )}
-          {componentData?.componentName && (
-            <>
-              <Text style={styles.targetInfoTitle}>
-                Компонент{' '}
-                <Text style={styles.targetInfoText}>
-                  {componentData?.componentName}
-                </Text>
-              </Text>
-              <Text style={styles.targetInfoTitle}>
-                Партия :
-                <Text style={styles.targetInfoText}>
-                  {componentData?.componentBatch}
-                </Text>
-              </Text>
-            </>
-          )}
-        </View>
-        {isScannerModeAvailable ? (
-          <Pressable style={styles.resetButton} onPress={resetScannerBottomBtn}>
-            <Text style={styles.resetButtonText}>Включить сканирование</Text>
+        <ScrollView
+          style={styles.instructionsScroll}
+          contentContainerStyle={styles.instructionsContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.handle} />
+          <View
+            style={[
+              styles.targetInfoCard,
+              isScannedSuccess && styles.targetInfoCardSuccess,
+            ]}
+          >
+            <Text style={styles.sectionTitle}>Информация сканирования</Text>
+            <InfoRow label="Этап" value={STEPS_DICTIONARY[state.step]} />
+            {bucketData?.component.name && (
+              <InfoRow label="Емкость" value={bucketData.component.name} />
+            )}
+            {componentData?.componentName && (
+              <InfoRow label="Компонент" value={componentData.componentName} />
+            )}
+            {componentData?.componentBatch && (
+              <InfoRow label="Партия" value={componentData.componentBatch} />
+            )}
+          </View>
+
+          <Pressable style={styles.resetButton} onPress={onActionPress}>
+            <Text style={styles.resetButtonText}>{actionTitle}</Text>
           </Pressable>
-        ) : (
-          <Pressable style={styles.resetButton} onPress={showInstruction}>
-            <Text style={styles.resetButtonText}>Инструкция использования</Text>
-          </Pressable>
-        )}
+        </ScrollView>
       </View>
     </SafeAreaView>
   );
@@ -119,55 +121,111 @@ export function FillContainerComponent() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000000',
+    backgroundColor: '#09090B',
   },
   cameraContainer: {
     width: width,
     height: width,
     overflow: 'hidden',
     backgroundColor: '#000000',
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
   },
   instructions: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    marginTop: -12,
+    backgroundColor: '#F8FAFC',
     paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    paddingTop: 10,
+    paddingBottom: 16,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
   },
-  targetInfoCard: {
-    backgroundColor: '#EFF6FF',
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#BFDBFE',
+  instructionsScroll: {
+    flex: 1,
+  },
+  instructionsContent: {
+    flexGrow: 1,
+  },
+  handle: {
+    alignSelf: 'center',
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#CBD5E1',
     marginBottom: 12,
   },
-  targetInfoTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#1E3A8A',
-    marginBottom: 4,
+  targetInfoCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    marginBottom: 16,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 18,
+    elevation: 2,
   },
-  targetInfoText: {
-    fontSize: 14,
-    color: '#1C1C1C',
+  targetInfoCardSuccess: {
+    backgroundColor: '#86EFAC',
+    borderColor: '#86EFAC',
+  },
+  sectionTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#0F172A',
     marginBottom: 10,
   },
+  infoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  infoLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#64748B',
+  },
+  infoValue: {
+    fontSize: 14,
+    color: '#0F172A',
+    fontWeight: '600',
+    flexShrink: 1,
+    textAlign: 'right',
+  },
   resetButton: {
-    marginTop: 4,
-    alignSelf: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 10,
-    backgroundColor: '#111827',
+    marginTop: 'auto',
+    alignSelf: 'stretch',
+    paddingVertical: 13,
+    borderRadius: 14,
+    backgroundColor: '#0EA5E9',
+    shadowColor: '#0369A1',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.22,
+    shadowRadius: 10,
+    elevation: 2,
   },
   resetButtonText: {
     color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '700',
+    textAlign: 'center',
   },
 });
+
+function InfoRow({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={styles.infoRow}>
+      <Text style={styles.infoLabel}>{label}</Text>
+      <Text style={styles.infoValue}>{value}</Text>
+    </View>
+  );
+}
 
 function getBucketData(state: FillingState, error: ErrorState) {
   if ('bucketData' in state) {
@@ -179,7 +237,7 @@ function getBucketData(state: FillingState, error: ErrorState) {
   return null;
 }
 
-function getComponentData(state: FillingState, error: ErrorState) {
+function getComponentData(state: FillingState, _error: ErrorState) {
   if ('fillingAct' in state) {
     return {
       componentBatch: state.fillingAct.componentBatchNumber,

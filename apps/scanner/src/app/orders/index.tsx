@@ -2,6 +2,7 @@ import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { WEB_CLIENT_URL } from '@/src/shared/constants/environments.constants';
 import { useRef, useState } from 'react';
+import { createWebPath } from '@/src/shared/helpers';
 
 const webSourceUrl = `${WEB_CLIENT_URL}/orders`;
 
@@ -69,7 +70,7 @@ export default function MainMenu() {
       <WebView
         ref={webViewRef}
         style={styles.webview}
-        source={{ uri: webSourceUrl }}
+        source={{ uri: createWebPath(webSourceUrl) }}
         onError={handleError}
         onHttpError={handleError}
         onLoadStart={handleLoadStart}

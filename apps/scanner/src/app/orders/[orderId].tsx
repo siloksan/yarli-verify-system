@@ -8,6 +8,7 @@ import {
   useWebViewBridgeStore,
 } from '@/src/shared/stores';
 import { WEB_CLIENT_URL } from '@/src/shared/constants/environments.constants';
+import { createWebPath } from '@/src/shared/helpers';
 
 export default function OrderRecipeWebView() {
   const webViewRef = useRef<WebView>(null);
@@ -48,15 +49,16 @@ export default function OrderRecipeWebView() {
     }
 
     setRequest(parsed);
+
     switch (parsed.type) {
       case WEB_TO_APP_MESSAGE_TYPES.SCAN_COMPONENT:
         router.push({
-          pathname: `/${SCANNER_ROUTES.scanner_check}`,
+          pathname: `/${SCANNER_ROUTES.scanner.root}/${SCANNER_ROUTES.scanner.check}`,
         });
         break;
       case WEB_TO_APP_MESSAGE_TYPES.FILLING_BUCKET_ACT:
         router.push({
-          pathname: `/${SCANNER_ROUTES.scanner_check_and_fill}`,
+          pathname: `/${SCANNER_ROUTES.scanner.root}/${SCANNER_ROUTES.scanner.check_and_fill}`,
         });
         break;
       default:
@@ -80,7 +82,7 @@ export default function OrderRecipeWebView() {
       key={webViewKey}
       ref={webViewRef}
       style={styles.container}
-      source={{ uri: sourceUri }}
+      source={{ uri: createWebPath(sourceUri) }}
       onMessage={handleWebMessage}
     />
   );

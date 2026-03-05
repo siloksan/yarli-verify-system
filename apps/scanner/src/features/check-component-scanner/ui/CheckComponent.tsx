@@ -10,19 +10,17 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import {
-  useScannerSessionStore,
-  useWebViewBridgeStore,
-} from '@/src/shared/stores';
-import { AppToWebMessage } from '@repo/api';
+import { useScannerSessionStore } from '@/src/shared/stores';
 import { useScannerValidation } from '../hooks';
 import { ScannerState } from '../types';
 import { ScannerModalChildren } from './ScannerModalChildren';
 import { useModal } from '@/src/shared/modal/modal.context';
-import { CameraPermission } from '@/src/shared/ui';
-import { CameraUnavailable } from '@/src/shared/ui';
-import { ScannerCamera } from '@/src/shared/ui';
-import { ScannerOverlay } from '@/src/shared/ui';
+import {
+  CameraPermission,
+  CameraUnavailable,
+  ScannerCamera,
+  ScannerOverlay,
+} from '@/src/shared/ui';
 
 const { width } = Dimensions.get('window');
 const SCANNER_SIZE = width * 0.8;
@@ -30,18 +28,8 @@ const SCANNER_SIZE = width * 0.8;
 export function CheckComponent() {
   const [torch, setTorch] = useState(false);
   const [permission, requestPermission] = useCameraPermissions();
-  const webViewRef = useWebViewBridgeStore((s) => s.webViewRef);
   const request = useScannerSessionStore((s) => s.request);
   const { hideModal } = useModal();
-
-  if (request?.type !== 'SCAN_COMPONENT') return null;
-  const { payload: requestPayload } = request;
-
-  const sendResultToWeb = (response: AppToWebMessage) => {
-    if (!webViewRef) return;
-
-    webViewRef.postMessage(JSON.stringify(response));
-  };
 
   const { state, handleScan, reset, showInstruction } = useScannerValidation(
     (state: ScannerState) => (
@@ -54,6 +42,9 @@ export function CheckComponent() {
       />
     ),
   );
+
+  if (request?.type !== 'SCAN_COMPONENT') return null;
+  const { payload: requestPayload } = request;
 
   const handleReset = () => {
     reset();
