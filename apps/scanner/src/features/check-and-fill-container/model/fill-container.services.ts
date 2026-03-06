@@ -4,12 +4,8 @@ import {
   BucketQRData,
 } from '@repo/api';
 
-import {
-  createFillingContainerAct,
-  getBucketById,
-} from '../../api/create-filling-container-act';
 import { getBucketData } from '@/src/features/check-fill-scanner/utils';
-import { ErrorState } from '../../hooks/useFillContainer';
+//
 
 export type BucketValidationResult =
   | { success: true; bucket: BucketQRData }
@@ -55,9 +51,7 @@ export async function validateBucketForFillContainer(
     };
   }
 }
-// payload: {
-//   bucketId: string;
-// } & ICreateFillingContainerActDto,
+
 export async function validateComponentForFillContainer(
   bucketId: string,
   createFillContainerAct: ICreateFillingContainerActDto,

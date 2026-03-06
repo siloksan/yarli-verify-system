@@ -18,7 +18,7 @@ import {
   FillingState,
   STEPS_DICTIONARY,
 } from '../model/fill-container.state';
-import { useFillContainer } from '../hooks/useFillContainer';
+import { useFillContainer } from '../../fill-container/hooks/useFillContainer';
 
 const { width } = Dimensions.get('window');
 const SCANNER_SIZE = width * 0.8;

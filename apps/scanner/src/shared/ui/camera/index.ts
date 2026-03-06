@@ -6,3 +6,4 @@ export * from './ScannerFrame';
 export * from './ScannerOverlay';
 export * from './TorchButton';
 export * from './StatusPanel';
+export * from './ScannerModalChildren';

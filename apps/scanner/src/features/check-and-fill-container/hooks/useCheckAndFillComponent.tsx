@@ -18,7 +18,7 @@ import {
 
 const DEFAULT_WORKER_NAME = 'Иванов Иван Иванович';
 
-export function useFillContainer() {
+export function useCheckAndFillComponent() {
   const [state, setState] = useState<FillingState>({
     step: 'SCAN_BUCKET',
   });
@@ -42,7 +42,6 @@ export function useFillContainer() {
 
   const handleScan = async ({ data }: { data: string }) => {
     if (isScanningRef.current) return;
-    console.log('scan data: ', data);
     const currentStep = state.step;
     isScanningRef.current = true;
 

@@ -18,7 +18,10 @@ import {
   CameraUnavailable,
   ScannerCamera,
   ScannerOverlay,
+  StatusPanel,
 } from '@/src/shared/ui';
+import { FillingState, STEPS_DICTIONARY } from '../model/machine/filling.state';
+import { ErrorState } from '../../fill-container/hooks/useFillContainer';
 
 const { width } = Dimensions.get('window');
 const SCANNER_SIZE = width * 0.8;
@@ -26,7 +29,7 @@ const SCANNER_SIZE = width * 0.8;
 export function FillingBucketActComponent() {
   const [torch, setTorch] = useState(false);
   const [permission, requestPermission] = useCameraPermissions();
-  const { showModal, hideModal } = useModal();
+  const { showModal } = useModal();
   const filling = useFilling();
   if (!filling) return null;
 
@@ -49,6 +52,14 @@ export function FillingBucketActComponent() {
   const showInstruction = () => {
     showModal(<CameraInstructions />);
   };
+
+  // const actionTitle = isScannerModeAvailable
+  //   ? 'Включить сканирование'
+  //   : 'Инструкция по использованию';
+
+  // const onActionPress = isScannerModeAvailable
+  //   ? handleBottomReset
+  //   : showInstruction;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -90,6 +101,31 @@ export function FillingBucketActComponent() {
           </Pressable>
         )}
       </View>
+      {/* <StatusPanel
+        actionTitle={actionTitle}
+        infoCardStyles={
+          isScannerModeAvailable ? styles.targetInfoCardSuccess : undefined
+        }
+        onActionPress={onActionPress}
+        infoRows={[
+          {
+            label: 'Этап',
+            value: STEPS_DICTIONARY[state.step],
+          },
+          {
+            label: 'Емкость',
+            value: bucketData?.component.name,
+          },
+          {
+            label: 'Компонент',
+            value: componentData?.componentName,
+          },
+          {
+            label: 'Партия',
+            value: componentData?.componentBatch,
+          },
+        ]}
+      /> */}
     </SafeAreaView>
   );
 }
@@ -155,4 +191,30 @@ const styles = StyleSheet.create({
     color: '#1C1C1C',
     marginBottom: 8,
   },
+  targetInfoCardSuccess: {
+    backgroundColor: '#86EFAC',
+    borderColor: '#86EFAC',
+  },
 });
+
+// function getBucketData(state: FillingState, error: ErrorState) {
+//   if ('bucketData' in state) {
+//     return state.bucketData;
+//   }
+//   if (error && 'prev' in error && 'bucketData' in error.prev) {
+//     return error.prev.bucketData;
+//   }
+
+//   return null;
+// }
+
+// function getComponentData(state: FillingState, _error: ErrorState) {
+//   if ('fillingAct' in state) {
+//     return {
+//       componentBatch: state.fillingAct.componentBatchNumber,
+//       componentName: state.fillingAct.componentName,
+//     };
+//   }
+
+//   return null;
+// }
