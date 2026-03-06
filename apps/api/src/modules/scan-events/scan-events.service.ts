@@ -65,7 +65,9 @@ export class ScanEventsService {
         },
       });
 
-      events.push(new ScanEventCreatedEvent(scanEventData.id));
+      if (scanEventData.result !== ScanResult.OK) {
+        events.push(new ScanEventCreatedEvent(scanEventData.id));
+      }
 
       return {
         scanEventData,
@@ -81,7 +83,7 @@ export class ScanEventsService {
       ScanEventDto,
       {
         ...result.scanEventData,
-        scanResult: result.scanEventData.result,
+        result: result.scanEventData.result,
         scannedComponentName: result.scannedData.component.name,
         scannedComponentBatch: result.scannedData.batchNumber,
       },
@@ -128,7 +130,9 @@ export class ScanEventsService {
           },
         });
 
-        events.push(new ScanEventCreatedEvent(scanEventData.id));
+        if (scanEventData.result !== ScanResult.OK) {
+          events.push(new ScanEventCreatedEvent(scanEventData.id));
+        }
 
         return {
           scanEventData,

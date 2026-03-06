@@ -119,5 +119,5 @@ export class ScanEventDto implements IScanEvent {
   })
   @IsEnum(ScanResult)
   @Expose()
-  scanResult: ScanResult;
+  result: ScanResult;
 }

@@ -23,7 +23,7 @@ export function useFilling() {
   const { showModal, hideModal } = useModal();
   const request = useScannerSessionStore((s) => s.request);
 
-  if (!request || request.type !== 'FILLING_BUCKET_ACT') return null;
+  if (request?.type !== 'FILLING_BUCKET_ACT') return null;
 
   const isScannerModeAvailable =
     state.step === 'BUCKET_COMPLETED' || state.step === 'ERROR';

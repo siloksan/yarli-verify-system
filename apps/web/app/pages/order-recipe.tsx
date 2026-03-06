@@ -22,6 +22,7 @@ export default function OrderDetailsPage() {
     [order?.components],
   );
   const { getUrl } = usePlatform();
+  console.log('order: ', order);
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,#dbeafe_0%,#f8fafc_45%,#f1f5f9_100%)] p-3 safe-padding sm:p-4">
@@ -124,7 +125,7 @@ export default function OrderDetailsPage() {
 function getStatus(events: IScanEvent[] | undefined): ComponentStatus {
   if (!events || events.length === 0) return 'UNCHECKED';
 
-  const isWrong = events.some((event) => event.scanResult === ScanResult.WRONG);
+  const isWrong = events.some((event) => event.result === ScanResult.WRONG);
 
   return isWrong ? ScanResult.WRONG : ScanResult.OK;
 }

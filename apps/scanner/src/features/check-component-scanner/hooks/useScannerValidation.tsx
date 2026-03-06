@@ -72,11 +72,12 @@ export function useScannerValidation(
           deviceId: 'scanner-mobile',
           operatorId: 'Иван Иванович Иванов',
         });
+        const { result: scanResult } = result;
 
         setStateAndUpdateModal({
           status: 'success',
           result: {
-            scanResult: result.scanResult,
+            scanResult,
             scannedComponentName: result.scannedComponentName,
             scannedComponentBatch: result.scannedComponentBatch,
           },

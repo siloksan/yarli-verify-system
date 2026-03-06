@@ -1,5 +1,4 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { PrismaService } from '../../common/prisma/prisma.service';
 import { ConfigService } from '../../common/config/config.service';
 import { NotificationService } from 'src/common/notification/notification.interface';
 import { ScanEventWithOrderNotification } from 'src/common/notification/dto/scan-event-notification.dto';
@@ -17,10 +16,7 @@ export interface IScanEventBotMessage {
 export class TelegramBotService implements OnModuleInit, NotificationService {
   private readonly logger = new Logger(TelegramBotService.name);
 
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly configService: ConfigService,
-  ) {}
+  constructor(private readonly configService: ConfigService) {}
 
   onModuleInit() {
     const telegramConfig = this.configService.getTelegramConfig();
@@ -44,10 +40,10 @@ export class TelegramBotService implements OnModuleInit, NotificationService {
       if (typeof payload[key] === 'string') {
         payload[key] = payload[key].replaceAll(
           /([_*\[\]()~`>#+\-=|{}.!\\])/g,
-          '\\$1',
+          String.raw`\$1`,
         );
       } else {
-        payload[key] = '-----';
+        payload[key] = String.raw`\-`;
       }
     }
 
@@ -136,6 +132,7 @@ export class TelegramBotService implements OnModuleInit, NotificationService {
       scannedComponentName,
       workerName,
     } = this.escapeTelegramMarkdownV2(payload);
+    console.log('createdAt: ', createdAt);
 
     const lines = [
       '🚨 *ОШИБКА СКАНИРОВАНИЯ* 🚨',
@@ -143,8 +140,8 @@ export class TelegramBotService implements OnModuleInit, NotificationService {
       '⚠️ *Критическое несоответствие*',
       '',
       `🟢 *Требуется:* \`${recipeComponentName}\``,
-      `🔴 *Сканирован:* \`${scannedComponentName}\``,
-      `📌 Партия сканированного компонента: *${scannedComponentBatch}*`,
+      `🔴 *Отсканирован:* \`${scannedComponentName}\``,
+      `📌 Партия отсканированного компонента: *${scannedComponentBatch}*`,
       '',
       '📦 *Контекст операции*',
       '',

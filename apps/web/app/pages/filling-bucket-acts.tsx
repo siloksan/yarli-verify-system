@@ -5,8 +5,8 @@ import { useAllFillingBucketActs } from '~/features/filling-bucket-acts';
 export default function FillingBucketActsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchField, setSearchField] = useState<
-    'all' | 'component' | 'worker' | 'batch'
-  >('all');
+    'везде' | 'по компоненту' | 'по сотруднику' | 'по партии'
+  >('везде');
 
   const {
     data: fillingActs = [],
@@ -20,13 +20,13 @@ export default function FillingBucketActsPage() {
 
     return fillingActs.filter((act) => {
       switch (searchField) {
-        case 'component':
+        case 'по компоненту':
           return act.componentName.toLowerCase().includes(term);
-        case 'worker':
+        case 'по сотруднику':
           return act.workerName.toLowerCase().includes(term);
-        case 'batch':
+        case 'по партии':
           return act.componentBatch.toLowerCase().includes(term);
-        case 'all':
+        case 'везде':
         default:
           return (
             act.componentName.toLowerCase().includes(term) ||
@@ -57,32 +57,32 @@ export default function FillingBucketActsPage() {
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search by component, batch, worker, bucket id..."
+                placeholder="Поиск по компоненту, партии, сотруднику"
                 className="w-full rounded-lg border border-gray-300 bg-white py-2 pl-4 pr-4 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <button
-                onClick={() => setSearchField('all')}
-                className={`rounded-lg px-3 py-1 text-sm font-semibold ${searchField === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`}
+                onClick={() => setSearchField('везде')}
+                className={`rounded-lg px-3 py-1 text-sm font-semibold ${searchField === 'везде' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`}
               >
                 Все
               </button>
               <button
-                onClick={() => setSearchField('component')}
-                className={`rounded-lg px-3 py-1 text-sm font-semibold ${searchField === 'component' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`}
+                onClick={() => setSearchField('по компоненту')}
+                className={`rounded-lg px-3 py-1 text-sm font-semibold ${searchField === 'по компоненту' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`}
               >
                 Компонент
               </button>
               <button
-                onClick={() => setSearchField('batch')}
-                className={`rounded-lg px-3 py-1 text-sm font-semibold ${searchField === 'batch' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`}
+                onClick={() => setSearchField('по партии')}
+                className={`rounded-lg px-3 py-1 text-sm font-semibold ${searchField === 'по партии' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`}
               >
                 Партия
               </button>
               <button
-                onClick={() => setSearchField('worker')}
-                className={`rounded-lg px-3 py-1 text-sm font-semibold ${searchField === 'worker' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`}
+                onClick={() => setSearchField('по сотруднику')}
+                className={`rounded-lg px-3 py-1 text-sm font-semibold ${searchField === 'по сотруднику' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`}
               >
                 Заполняющий
               </button>
@@ -94,7 +94,7 @@ export default function FillingBucketActsPage() {
           <div className="rounded-xl border border-dashed border-gray-300 bg-white p-12 text-center">
             <div className="flex flex-col items-center gap-2">
               <span className="h-6 w-6 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></span>
-              <span className="text-gray-500">Loading acts...</span>
+              <span className="text-gray-500">Загрузка актов</span>
             </div>
           </div>
         )}
@@ -124,12 +124,12 @@ export default function FillingBucketActsPage() {
                 Нет совпадений
               </h3>
               <p className="mt-1 text-sm text-gray-500">
-                Не найдено ни одного акта по поску "{searchTerm}".
+                Не найдено ни одного акта "{searchTerm}".
               </p>
               <button
                 onClick={() => {
                   setSearchTerm('');
-                  setSearchField('all');
+                  setSearchField('везде');
                 }}
                 className="mt-4 text-sm text-blue-600 hover:text-blue-700"
               >
@@ -142,7 +142,7 @@ export default function FillingBucketActsPage() {
           !fillingActsError &&
           filteredActs.length > 0 && (
             <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-              <div className="hidden md:block">
+              <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
@@ -186,53 +186,9 @@ export default function FillingBucketActsPage() {
                   </tbody>
                 </table>
               </div>
-              {/* <div className="divide-y divide-gray-200 md:hidden">
-                {filteredActs.map((act) => (
-                  <div key={act.id} className="flex flex-col gap-2 p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="font-semibold text-gray-900">
-                        {act.componentName}
-                      </div>
-                      <span
-                        className={`rounded-full px-2 py-1 text-xs font-semibold ${getStatusColor(act.createdAt)}`}
-                      >
-                        {getStatusText(act.createdAt)}
-                      </span>
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      ID: {act.id.slice(0, 8)}...
-                    </div>
-                    <div className="text-sm">Batch: {act.componentBatch}</div>
-                    <div className="text-sm">Worker: {act.workerName}</div>
-                    <div className="text-sm">Weight: {act.weight ?? '-'}</div>
-                    <div className="text-sm">
-                      Date: {format(new Date(act.createdAt), 'dd.MM.yyyy')}
-                    </div>
-                  </div>
-                ))}
-              </div> */}
             </div>
           )}
       </div>
     </div>
   );
 }
-
-// function getStatusColor(createdAt: string) {
-//   const daysOld = Math.floor(
-//     (Date.now() - new Date(createdAt).getTime()) / (1000 * 60 * 60 * 24),
-//   );
-//   if (daysOld < 7) return 'bg-green-100 text-green-800';
-//   if (daysOld < 30) return 'bg-yellow-100 text-yellow-800';
-//   return 'bg-orange-100 text-orange-800';
-// }
-
-// function getStatusText(createdAt: string) {
-//   const daysOld = Math.floor(
-//     (Date.now() - new Date(createdAt).getTime()) / (1000 * 60 * 60 * 24),
-//   );
-//   if (daysOld === 0) return 'Today';
-//   if (daysOld === 1) return 'Yesterday';
-//   if (daysOld < 30) return `${daysOld} d`;
-//   return `${Math.floor(daysOld / 30)} mo`;
-// }

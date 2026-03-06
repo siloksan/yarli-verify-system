@@ -72,5 +72,5 @@ export interface IScanEvent {
   orderId: string;
   scannedComponentName: string;
   scannedComponentBatch?: string;
-  scanResult: ScanResult;
+  result: ScanResult;
 }

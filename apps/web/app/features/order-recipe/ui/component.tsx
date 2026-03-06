@@ -151,9 +151,9 @@ export function Component({
         )}
         {scanEvents.map((event) => {
           const backgroundColor =
-            event.scanResult === 'OK' ? 'bg-emerald-50' : 'bg-red-50';
+            event.result === 'OK' ? 'bg-emerald-50' : 'bg-red-50';
           const textColor =
-            event.scanResult === 'OK' ? 'text-emerald-700' : 'text-red-700';
+            event.result === 'OK' ? 'text-emerald-700' : 'text-red-700';
 
           return (
             <span

@@ -32,7 +32,7 @@ class ScanEvent implements IScanEvent {
   })
   @IsEnum(ScanResult)
   @Expose()
-  scanResult: ScanResult;
+  result: ScanResult;
 
   @ApiProperty()
   @IsString()

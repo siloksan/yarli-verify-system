@@ -141,7 +141,6 @@ export class FillingBucketActsService {
         data: {
           orderId,
           componentId: recipeComponentId,
-          batchId: scannedBatch.id,
           scannedCode: componentBarcode,
           result: ScanResult.OK,
           deviceId: 'tutel_phone',
@@ -257,12 +256,38 @@ export class FillingBucketActsService {
       orderBy: {
         createdAt: 'desc',
       },
+      include: {
+        component: {
+          select: {
+            name: true,
+          },
+        },
+        batch: {
+          select: {
+            batchNumber: true,
+          },
+        },
+      },
     });
 
     return fillingBucketActs.map((act) =>
-      plainToInstance(FillingBucketActResponseDto, act, {
-        excludeExtraneousValues: true,
-      }),
+      plainToInstance(
+        FillingBucketActResponseDto,
+        {
+          id: act.id,
+          componentId: act.componentId,
+          componentName: act.component.name,
+          componentBatch: act.batch.batchNumber,
+          workerName: act.workerName,
+          weight: act.weight,
+          createdAt: act.createdAt,
+          bucketId: act.bucketId,
+          orderId: act.orderId,
+        },
+        {
+          excludeExtraneousValues: true,
+        },
+      ),
     );
   }
 
