@@ -5,9 +5,9 @@ import { useModal } from '@/src/shared/modal';
 import { ICreateFillingContainerActDto } from '@repo/api';
 import { ErrorState, FillingState } from '../model/fill-container.state';
 import {
-  validateBucketQrCode,
   validateComponentForFillContainer,
   validateContainerById,
+  validateContainerQrCode,
 } from '../model/fill-container.services';
 import {
   BucketScannedSuccess,
@@ -42,13 +42,11 @@ export function useFillContainer() {
 
   const handleScan = async ({ data }: { data: string }) => {
     if (isScanningRef.current) return;
-    console.log('scan data: ', data);
     const currentStep = state.step;
     isScanningRef.current = true;
 
     if (currentStep === 'SCAN_BUCKET') {
-      const resultQrValidation = validateBucketQrCode(data);
-      console.log('resultQrValidation: ', resultQrValidation);
+      const resultQrValidation = validateContainerQrCode(data);
 
       if ('errorMessage' in resultQrValidation) {
         const { errorMessage } = resultQrValidation;
@@ -154,9 +152,7 @@ export function useFillContainer() {
         showModal(
           <ComponentScannedSuccess
             componentName={resultComponentValidation.componentName}
-            scannedComponentBatch={
-              resultComponentValidation.componentBatchNumber
-            }
+            scannedComponentBatch={resultComponentValidation.componentBatch}
           />,
         );
         return;

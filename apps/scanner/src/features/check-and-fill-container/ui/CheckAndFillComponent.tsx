@@ -18,22 +18,24 @@ import {
   FillingState,
   STEPS_DICTIONARY,
 } from '../model/fill-container.state';
-import { useFillContainer } from '../../fill-container/hooks/useFillContainer';
+import { useCheckAndFillComponent } from '../hooks/useCheckAndFillComponent';
 
 const { width } = Dimensions.get('window');
 const SCANNER_SIZE = width * 0.8;
 
-export function FillContainerComponent() {
+export function CheckAndFillContainerComponent() {
   const [torch, setTorch] = useState(false);
   const [permission, requestPermission] = useCameraPermissions();
   const { showModal } = useModal();
-  const filling = useFillContainer();
+  const filling = useCheckAndFillComponent();
+  if (!filling) return null;
 
   const {
     state,
     handleScan,
     isScannerModeAvailable,
     resetScannerBottomBtn,
+    recipeComponentName,
     error,
   } = filling;
 
@@ -83,6 +85,10 @@ export function FillContainerComponent() {
         }
         onActionPress={onActionPress}
         infoRows={[
+          {
+            label: 'Рецептурный компонент',
+            value: recipeComponentName,
+          },
           {
             label: 'Этап',
             value: STEPS_DICTIONARY[state.step],
@@ -138,7 +144,7 @@ function getBucketData(state: FillingState, error: ErrorState) {
 function getComponentData(state: FillingState, _error: ErrorState) {
   if ('fillingAct' in state) {
     return {
-      componentBatch: state.fillingAct.componentBatchNumber,
+      componentBatch: state.fillingAct.componentBatch,
       componentName: state.fillingAct.componentName,
     };
   }

@@ -51,7 +51,7 @@ export function ScannerModalChildren({
     }
 
     if (state.status === 'success') {
-      const isSuccess = validationResult?.scanResult === ScanResult.OK;
+      const isSuccess = validationResult?.result === ScanResult.OK;
 
       return (
         <View style={styles.resultCard}>

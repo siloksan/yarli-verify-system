@@ -1,7 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   ICreateFillingActBucketDto,
-  IFillingActBucketResponseDto,
   ICreateFillingContainerActDto,
   IFillingContainerActResponseDto,
 } from '@repo/api';
@@ -55,61 +54,6 @@ export class CreateFillingBucketActDto implements ICreateFillingActBucketDto {
   recipeComponentName: string;
 }
 
-export class FillingBucketActResponseDto implements IFillingActBucketResponseDto {
-  @ApiProperty()
-  @IsString()
-  @Expose()
-  id: string;
-
-  @ApiProperty()
-  @IsString()
-  @Expose()
-  componentName: string;
-
-  @ApiProperty()
-  @IsString()
-  @Expose()
-  componentBatch: string;
-
-  @ApiProperty()
-  @IsString()
-  @Expose()
-  workerName: string;
-
-  @ApiPropertyOptional({
-    nullable: true,
-    type: String,
-  })
-  @IsOptional()
-  @IsString()
-  @Expose()
-  weight: string | null;
-
-  @ApiProperty()
-  @IsString()
-  @Expose()
-  bucketId: string;
-
-  @ApiProperty()
-  @IsString()
-  @Expose()
-  componentId: string;
-
-  @ApiProperty()
-  @IsString()
-  @Expose()
-  orderId: string;
-
-  @ApiProperty({
-    description: 'Creation date in ISO 8601 format',
-    example: '2024-01-15T10:30:00.000Z',
-    type: String,
-  })
-  @IsDateString()
-  @Expose()
-  createdAt: string;
-}
-
 export class CreateFillingContainerAct implements ICreateFillingContainerActDto {
   @ApiProperty()
   @IsString()
@@ -142,7 +86,35 @@ export class FillingContainerActResponseDto implements IFillingContainerActRespo
   @ApiProperty()
   @IsString()
   @Expose()
-  componentBatchNumber: string;
+  componentId: string;
+
+  @ApiProperty()
+  @IsString()
+  @Expose()
+  componentNumber: string;
+
+  @ApiProperty()
+  @IsString()
+  @Expose()
+  componentBatch: string;
+
+  @ApiPropertyOptional({
+    nullable: true,
+    type: String,
+  })
+  @IsOptional()
+  @IsString()
+  @Expose()
+  bucketId?: string;
+
+  @ApiPropertyOptional({
+    nullable: true,
+    type: String,
+  })
+  @IsOptional()
+  @IsString()
+  @Expose()
+  orderId?: string;
 
   @ApiProperty()
   @IsString()

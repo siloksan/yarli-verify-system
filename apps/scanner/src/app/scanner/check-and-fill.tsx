@@ -1,5 +1,5 @@
-import { FillingBucketActComponent } from '@/src/features/check-fill-scanner';
+import { CheckAndFillContainerComponent } from '@/src/features/check-and-fill-container';
 
 export default function Check() {
-  return <FillingBucketActComponent />;
+  return <CheckAndFillContainerComponent />;
 }

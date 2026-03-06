@@ -2,7 +2,7 @@ import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { WEB_CLIENT_URL } from '@/src/shared/constants/environments.constants';
 import { useRef, useState } from 'react';
-import { createWebPath } from '@/src/shared/helpers';
+import { createWebPath } from '@/src/shared/lib';
 
 const webSourceUrl = `${WEB_CLIENT_URL}/orders`;
 

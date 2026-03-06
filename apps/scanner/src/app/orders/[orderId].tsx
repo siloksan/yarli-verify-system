@@ -8,7 +8,7 @@ import {
   useWebViewBridgeStore,
 } from '@/src/shared/stores';
 import { WEB_CLIENT_URL } from '@/src/shared/constants/environments.constants';
-import { createWebPath } from '@/src/shared/helpers';
+import { createWebPath } from '@/src/shared/lib';
 
 export default function OrderRecipeWebView() {
   const webViewRef = useRef<WebView>(null);

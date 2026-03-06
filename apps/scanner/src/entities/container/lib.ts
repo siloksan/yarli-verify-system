@@ -1,12 +1,5 @@
+import { isNonEmptyString, isObject } from '@/src/shared/lib/guards';
 import { BucketQRData } from '@repo/api';
-
-function isNonEmptyString(value: unknown): value is string {
-  return typeof value === 'string' && value.trim().length > 0;
-}
-
-function isObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
 
 export function getBucketData(code: string): BucketQRData | null {
   if (!isNonEmptyString(code)) {

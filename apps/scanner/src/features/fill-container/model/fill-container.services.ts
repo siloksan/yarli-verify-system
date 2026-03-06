@@ -1,59 +1,10 @@
-import {
-  HttpError,
-  ICreateFillingContainerActDto,
-  BucketQRData,
-} from '@repo/api';
+import { HttpError, ICreateFillingContainerActDto } from '@repo/api';
 
-import { getBucketData } from '@/src/features/check-fill-scanner/utils';
+import { getBucketData } from '@/src/entities';
 import {
   createFillingContainerAct,
   getBucketById,
 } from '../api/create-filling-container-act';
-
-export type BucketValidationResult =
-  | { success: true; bucket: BucketQRData }
-  | { success: false; message: string };
-
-export type ComponentValidationResult =
-  | {
-      success: true;
-      fillingAct: Awaited<ReturnType<typeof createFillingContainerAct>>;
-    }
-  | { success: false; message: string };
-
-export async function validateBucketForFillContainer(
-  bucketQrCode: string,
-): Promise<BucketValidationResult> {
-  const parsedData = getBucketData(bucketQrCode);
-
-  if (!parsedData) {
-    return {
-      success: false,
-      message: 'Invalid bucket QR code. Please scan again.',
-    };
-  }
-
-  try {
-    const bucket = await getBucketById(parsedData.id);
-
-    if (bucket.component.name !== parsedData.componentName) {
-      return {
-        success: false,
-        message: 'Bucket component mismatch. Scan the correct bucket.',
-      };
-    }
-
-    return { success: true, bucket: parsedData };
-  } catch (error) {
-    return {
-      success: false,
-      message:
-        error instanceof HttpError
-          ? error.message
-          : 'Failed to verify bucket. Please try again.',
-    };
-  }
-}
 
 export async function validateComponentForFillContainer(
   bucketId: string,
@@ -75,7 +26,7 @@ export async function validateComponentForFillContainer(
   }
 }
 
-export function validateBucketQrCode(bucketQrCode: string) {
+export function validateContainerQrCode(bucketQrCode: string) {
   const parsedData = getBucketData(bucketQrCode);
 
   return (

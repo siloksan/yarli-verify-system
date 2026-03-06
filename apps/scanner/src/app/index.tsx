@@ -2,7 +2,7 @@ import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { WEB_CLIENT_URL } from '@/src/shared/constants/environments.constants';
 import { useRef, useState } from 'react';
-import { createWebPath } from '../shared/helpers';
+import { createWebPath } from '../shared/lib';
 
 export default function MainMenu() {
   const webViewRef = useRef<WebView>(null);

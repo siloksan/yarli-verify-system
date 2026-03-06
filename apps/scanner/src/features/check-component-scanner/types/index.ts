@@ -1,7 +1,7 @@
 import { ScanResult } from '@repo/api';
 
 export type ValidationResultState = {
-  scanResult: ScanResult;
+  result: ScanResult;
   scannedComponentName: string;
   scannedComponentBatch?: string;
 };

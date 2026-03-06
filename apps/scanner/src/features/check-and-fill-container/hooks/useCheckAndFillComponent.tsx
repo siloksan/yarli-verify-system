@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 
 import { useModal } from '@/src/shared/modal';
 
-import { ICreateFillingContainerActDto } from '@repo/api';
+import { ICreateFillingActBucketDto } from '@repo/api';
 import { ErrorState, FillingState } from '../model/fill-container.state';
 import {
   validateBucketQrCode,
@@ -15,6 +15,7 @@ import {
   ScannedError,
   ScannerInProgress,
 } from '@/src/shared/ui';
+import { useScannerSessionStore } from '@/src/shared/stores';
 
 const DEFAULT_WORKER_NAME = 'Иванов Иван Иванович';
 
@@ -27,6 +28,11 @@ export function useCheckAndFillComponent() {
   const prevStateRef = useRef<FillingState>({ step: 'SCAN_BUCKET' });
   const isScanningRef = useRef(false);
   const { showModal, hideModal } = useModal();
+  const webRequest = useScannerSessionStore((s) => s.request);
+  if (!webRequest) return null;
+
+  const { componentId, componentName, orderId, validBatches } =
+    webRequest.payload;
 
   const isScannerModeAvailable =
     state.step === 'BUCKET_COMPLETED' || state.step === 'ERROR';
@@ -118,9 +124,15 @@ export function useCheckAndFillComponent() {
 
       showModal(<ScannerInProgress />);
 
-      const createFillContainerActDto: ICreateFillingContainerActDto = {
+      const createFillContainerActDto: ICreateFillingActBucketDto = {
+        bucketId,
+        orderId,
+        recipeComponentId: componentId,
         componentBarcode: data,
+        recipeComponentName: componentName,
+        validBatchesId: validBatches,
         workerName: DEFAULT_WORKER_NAME,
+        weight: null,
       };
 
       const resultComponentValidation = await validateComponentForFillContainer(
@@ -153,9 +165,7 @@ export function useCheckAndFillComponent() {
         showModal(
           <ComponentScannedSuccess
             componentName={resultComponentValidation.componentName}
-            scannedComponentBatch={
-              resultComponentValidation.componentBatchNumber
-            }
+            scannedComponentBatch={resultComponentValidation.componentBatch}
           />,
         );
         return;
@@ -187,6 +197,7 @@ export function useCheckAndFillComponent() {
 
   return {
     state,
+    recipeComponentName: componentName,
     handleScan,
     isScannerModeAvailable,
     error,

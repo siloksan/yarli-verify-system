@@ -77,7 +77,7 @@ export function useScannerValidation(
         setStateAndUpdateModal({
           status: 'success',
           result: {
-            scanResult,
+            result: scanResult,
             scannedComponentName: result.scannedComponentName,
             scannedComponentBatch: result.scannedComponentBatch,
           },

@@ -1,17 +1,12 @@
-import {
-  Injectable,
-  InternalServerErrorException,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import {
   CreateFillingBucketActDto,
   CreateFillingContainerAct,
-  FillingBucketActResponseDto,
   FillingContainerActResponseDto,
 } from './dto/create-filling-bucket-act.dto';
 import { plainToInstance } from 'class-transformer';
-import { ScanResult } from '@repo/api';
+import { IFillingContainerActResponseDto, ScanResult } from '@repo/api';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ScanEventCreatedEvent } from '../scan-events/events/scan-event-created.event';
 import { EVENTS } from 'src/common/constants/events.constant';
@@ -23,9 +18,9 @@ export class FillingBucketActsService {
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
-  async create(createFillingBucketActDto: CreateFillingBucketActDto) {
-    // const events: ScanEventCreatedEvent[] = [];
-
+  async create(
+    createFillingBucketActDto: CreateFillingBucketActDto,
+  ): Promise<IFillingContainerActResponseDto> {
     const {
       orderId,
       recipeComponentId,
@@ -152,7 +147,7 @@ export class FillingBucketActsService {
     });
 
     return plainToInstance(
-      FillingBucketActResponseDto,
+      FillingContainerActResponseDto,
       {
         ...createdAct,
         componentName: createdAct.act.component.name,
@@ -167,7 +162,7 @@ export class FillingBucketActsService {
   async createFillContainerAct(
     bucketId: string,
     createFillingContainerAct: CreateFillingContainerAct,
-  ) {
+  ): Promise<IFillingContainerActResponseDto> {
     const { componentBarcode, ...createData } = createFillingContainerAct;
 
     const scannedBatch = await this.prisma.componentBatch.findUnique({
@@ -225,11 +220,22 @@ export class FillingBucketActsService {
         component: {
           select: {
             name: true,
+            id: true,
           },
         },
         batch: {
           select: {
             batchNumber: true,
+          },
+        },
+        bucket: {
+          select: {
+            id: true,
+          },
+        },
+        order: {
+          select: {
+            id: true,
           },
         },
       },
@@ -239,11 +245,14 @@ export class FillingBucketActsService {
       FillingContainerActResponseDto,
       {
         id: fillAct.id,
+        componentId: fillAct.component.id,
         workerName: fillAct.workerName,
         weight: fillAct.weight,
         componentName: fillAct.component.name,
-        componentBatchNumber: fillAct.batch.batchNumber,
+        componentBatch: fillAct.batch.batchNumber,
         createAt: fillAct.createdAt,
+        bucketId: fillAct.bucket.id,
+        orderId: fillAct.order.id,
       },
       {
         excludeExtraneousValues: true,
@@ -272,7 +281,7 @@ export class FillingBucketActsService {
 
     return fillingBucketActs.map((act) =>
       plainToInstance(
-        FillingBucketActResponseDto,
+        FillingContainerActResponseDto,
         {
           id: act.id,
           componentId: act.componentId,
@@ -289,54 +298,5 @@ export class FillingBucketActsService {
         },
       ),
     );
-  }
-
-  async findByBucketId(bucketId: string) {
-    const fillingBucketActs = await this.prisma.fillingActBucket.findMany({
-      where: {
-        bucketId,
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
-
-    if (fillingBucketActs.length === 0) {
-      throw new NotFoundException('Filling bucket act not found');
-    }
-
-    return plainToInstance(FillingBucketActResponseDto, fillingBucketActs, {
-      excludeExtraneousValues: true,
-    });
-  }
-
-  async findOne(id: string) {
-    const fillingBucketAct = await this.prisma.fillingActBucket.findUnique({
-      where: {
-        id,
-      },
-    });
-
-    if (!fillingBucketAct) {
-      throw new NotFoundException('Filling bucket act not found');
-    }
-
-    return plainToInstance(FillingBucketActResponseDto, fillingBucketAct, {
-      excludeExtraneousValues: true,
-    });
-  }
-
-  async remove(id: string) {
-    await this.findOne(id);
-
-    const deletedFillingAct = await this.prisma.fillingActBucket.delete({
-      where: {
-        id,
-      },
-    });
-
-    return plainToInstance(FillingBucketActResponseDto, deletedFillingAct, {
-      excludeExtraneousValues: true,
-    });
   }
 }

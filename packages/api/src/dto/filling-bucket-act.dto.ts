@@ -9,18 +9,6 @@ export interface ICreateFillingActBucketDto {
   recipeComponentName: string;
 }
 
-export interface IFillingActBucketResponseDto {
-  id: string;
-  componentId: string;
-  componentName: string;
-  componentBatch: string;
-  workerName: string;
-  weight: string | null;
-  createdAt: string;
-  bucketId: string;
-  orderId: string;
-}
-
 // filling act without relation with order
 // fill any container, validate only componentId
 
@@ -33,8 +21,11 @@ export interface ICreateFillingContainerActDto {
 export interface IFillingContainerActResponseDto {
   id: string;
   workerName: string;
-  weight: string;
   componentName: string;
-  componentBatchNumber: string;
+  componentId: string;
+  componentBatch: string;
+  weight: string | null;
   createdAt: string;
+  bucketId?: string;
+  orderId?: string;
 }

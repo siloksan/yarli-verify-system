@@ -19,6 +19,14 @@ type RequestOptions<TBody> = {
   headers?: HeadersInit;
 };
 
+/**
+ * Makes an HTTP request to the given endpoint with the given options.
+ * @param {string} baseUrl - The base URL for the HTTP request.
+ * @param {`/${string}` | undefined} endpoint - The endpoint for the HTTP request.
+ * @param {RequestOptions<TBody> | undefined} options - The options for the HTTP request.
+ * @returns {Promise<TResponse>} - A promise that resolves to the response data.
+ * @throws {HttpError} - If the response status is not OK.
+ */
 export async function http<TResponse, TBody = unknown>(
   baseUrl: string,
   endpoint?: `/${string}`,
