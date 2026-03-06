@@ -5,3 +5,4 @@ export * from './ScannerCamera';
 export * from './ScannerFrame';
 export * from './ScannerOverlay';
 export * from './TorchButton';
+export * from './StatusPanel';
