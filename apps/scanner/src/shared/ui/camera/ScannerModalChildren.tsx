@@ -54,7 +54,7 @@ export function BucketScannedSuccess({
 
 interface ComponentScannedSuccessProps {
   componentName: string;
-  scannedComponentBatch: string;
+  scannedComponentBatch?: string;
 }
 
 export function ComponentScannedSuccess({
@@ -75,18 +75,10 @@ export function ComponentScannedSuccess({
             Сканирован компонент: {componentName}
           </Text>
           <Text style={styles.resultValue}>
-            Сканированная партия: {scannedComponentBatch}
+            Сканированная партия: {scannedComponentBatch && 'не указана'}
           </Text>
         </View>
       </View>
-      {/* <Pressable
-        style={styles.closeButton}
-        onPress={() => {
-          hideModal?.();
-        }}
-      >
-        <Text style={styles.closeButtonText}>Закрыть окно</Text>
-      </Pressable> */}
     </View>
   );
 }

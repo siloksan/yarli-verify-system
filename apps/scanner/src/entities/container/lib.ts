@@ -7,7 +7,6 @@ export function getBucketData(code: string): BucketQRData | null {
   }
 
   let parsed: unknown;
-  console.log('parsed: ', parsed);
 
   try {
     parsed = JSON.parse(code);
