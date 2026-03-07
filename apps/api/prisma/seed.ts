@@ -2,190 +2,29 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { Prisma, PrismaClient } from '../generated/prisma/client';
 import { Pool } from 'pg';
 import 'dotenv/config';
-import { COMMON_COMPONENTS, COLOR_COMPONENTS } from './seed.data';
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
-type OrderSeed = {
+// Импорт данных из вашего файла
+import { recipes, componentsCatalog } from './orders-recipe';
+
+// Типы для производственных заказов
+type ProductionOrderSeed = {
   orderNumber: string;
   label: string;
   description?: string;
-  plannedAt?: Date;
+  plannedAt: Date;
+  batchSize: number;
+  recipeName: string;
 };
 
-const ORDERS: OrderSeed[] = [
-  {
-    orderNumber: 'В500001',
-    label: 'ВД-АК-1308 база',
-    description: 'Standard batch for indoor coating.',
-    plannedAt: new Date('2026-02-10'),
-  },
-  {
-    orderNumber: 'В500023',
-    label: 'ВД-АК-1308 белая',
-    description: 'Weather-resistant formulation.',
-    plannedAt: new Date('2026-02-11'),
-  },
-  {
-    orderNumber: 'В500123',
-    label: 'ВД-АК-1308 красная',
-    description: 'High-adhesion primer mix.',
-    plannedAt: new Date('2026-02-12'),
-  },
-  {
-    orderNumber: 'В500433',
-    label: 'ВД-АК-1308 синяя',
-    description: 'Low-VOC interior blend.',
-    plannedAt: new Date('2026-02-13'),
-  },
-  {
-    orderNumber: 'В500021',
-    label: 'ВД-АК-1308 чёрная',
-    description: 'Durable matte finish.',
-    plannedAt: new Date('2026-02-14'),
-  },
-];
+// Конвертация рецептов в производственные заказы
 
-async function seed() {
-  // Start clean so unique constraints don't fail.
-  await prisma.scanEvent.deleteMany();
-  await prisma.componentBatch.deleteMany();
-  await prisma.recipeComponent.deleteMany();
-  await prisma.productionOrder.deleteMany();
-  await prisma.component.deleteMany();
-
-  const allComponents = [
-    ...COMMON_COMPONENTS,
-    ...Object.values(COLOR_COMPONENTS),
-  ];
-  const generatedComponents = generateNewComponents();
-
-  for (const item of allComponents) {
-    const created = await prisma.component.create({
-      data: {
-        name: item.component.componentName,
-      },
-      select: { id: true },
-    });
-
-    if (item.batches.length > 0) {
-      await prisma.componentBatch.createMany({
-        data: item.batches.map((batch) => {
-          return {
-            componentId: created.id,
-            batchNumber: batch.batchNumber,
-            barcode: getBarCodeEAN13ForComponent(batch.batchNumber),
-            expiresAt: batch.expiresAt,
-          };
-        }),
-        skipDuplicates: true,
-      });
-    }
-  }
-
-  for (const item of generatedComponents) {
-    const created = await prisma.component.create({
-      data: {
-        name: item.name,
-      },
-      select: { id: true },
-    });
-
-    if (item.batches.length > 0) {
-      await prisma.componentBatch.createMany({
-        data: item.batches.map((batch) => ({
-          componentId: created.id,
-          batchNumber: batch.batchNumber,
-          barcode: getBarCodeEAN13ForComponent(batch.batchNumber),
-          expiresAt: batch.expiresAt,
-        })),
-        skipDuplicates: true,
-      });
-    }
-  }
-
-  for (const element of ORDERS) {
-    const order = element;
-    let totalWeight = new Prisma.Decimal(0);
-    const components = COMMON_COMPONENTS.map((item, index) => {
-      totalWeight = totalWeight.plus(item.component.requiredQty);
-
-      return {
-        componentName: item.component.componentName,
-        position: index + 1,
-        requiredQty: item.component.requiredQty,
-        unit: item.component.unit,
-        validBatches: [],
-      };
-    });
-
-    if (components.length !== 8) {
-      throw new Error(
-        `Expected 8 components per order, got ${components.length}`,
-      );
-    }
-
-    await prisma.productionOrder.create({
-      data: {
-        orderNumber: order.orderNumber,
-        label: order.label,
-        plannedAt: order.plannedAt,
-        components: {
-          create: components,
-        },
-        weight: totalWeight,
-      },
-    });
-  }
-}
-
-const AMOUNT_OF_COMPONENTS = 999;
-let batchNumber = 1;
-
-function getNewBatch() {
-  return {
-    batchNumber: `П250100${batchNumber++}`,
-    expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30),
-  };
-}
-
-function generateNewComponents() {
-  const newComponents: Array<{
-    code: string;
-    name: string;
-    batches: Array<{ batchNumber: string; expiresAt: Date }>;
-  }> = [];
-
-  for (let i = 0; i < AMOUNT_OF_COMPONENTS; i++) {
-    const batches = Array.from({ length: Math.floor(Math.random() * 5) }, () =>
-      getNewBatch(),
-    );
-    const newComponent = {
-      code: `component-code-00-${i}`,
-      name: `компонент-${i}`,
-      batches,
-    };
-
-    newComponents.push(newComponent);
-  }
-
-  return newComponents;
-}
-
-seed()
-  .catch((error) => {
-    console.error('Seed failed:', error);
-    process.exitCode = 1;
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
-
-function calculateEAN13Checksum(codeWithoutChecksum: string) {
+// Функция для генерации EAN-13 штрихкода
+function calculateEAN13Checksum(codeWithoutChecksum: string): string {
   const digits = codeWithoutChecksum.split('').map(Number);
-
   const sum = digits.reduce((acc, digit, index) => {
     const isEvenPosition = (index + 1) % 2 === 0;
     return acc + digit * (isEvenPosition ? 3 : 1);
@@ -194,13 +33,205 @@ function calculateEAN13Checksum(codeWithoutChecksum: string) {
   return checksum.toString();
 }
 
-function getBarCodeEAN13ForComponent(batch: string) {
+function getBarCodeEAN13ForComponent(batchNumber: string): string {
   const baseCode = '200000000000';
-  const batchNumber = Number.parseInt(batch.replaceAll(/\D/g, ''), 10);
-  const codeWithoutChecksum = (
-    BigInt(baseCode) + BigInt(batchNumber)
-  ).toString();
-
+  const batchNum = parseInt(batchNumber.replace(/\D/g, ''), 10);
+  const codeWithoutChecksum = (BigInt(baseCode) + BigInt(batchNum)).toString();
   const checksum = calculateEAN13Checksum(codeWithoutChecksum);
   return codeWithoutChecksum + checksum;
 }
+
+// Получение даты истечения срока (6 месяцев от текущей даты)
+function getExpiryDate(baseDate: Date = new Date()): Date {
+  const expiryDate = new Date(baseDate);
+  expiryDate.setMonth(expiryDate.getMonth() + 6);
+  return expiryDate;
+}
+
+// Функция для сбора всех рецептов в плоский массив
+// function getAllRecipes() {
+//   return [
+//     ...Object.values(recipes.polyester),
+//     ...Object.values(recipes.acrylic),
+//     ...Object.values(recipes.waterDispersion),
+//   ];
+// }
+
+async function seed() {
+  console.log('🌱 Начало seed...');
+
+  // Очистка базы данных
+  console.log('Очистка таблиц...');
+  await prisma.scanEvent.deleteMany();
+  await prisma.componentBatch.deleteMany();
+  await prisma.recipeComponent.deleteMany();
+  await prisma.productionOrder.deleteMany();
+  await prisma.component.deleteMany();
+
+  // 1. СОЗДАНИЕ КОМПОНЕНТОВ И ИХ ПАРТИЙ
+  console.log('Создание компонентов и партий...');
+
+  for (const component of componentsCatalog) {
+    // Создаем компонент
+    const created = await prisma.component.create({
+      data: {
+        name: component.name,
+      },
+      select: { id: true },
+    });
+
+    // Создаем партии для компонента (1-4 партии)
+    if (component.batches.length > 0) {
+      await prisma.componentBatch.createMany({
+        data: component.batches.map((batchNumber) => ({
+          componentId: created.id,
+          batchNumber: batchNumber,
+          barcode: getBarCodeEAN13ForComponent(batchNumber),
+          expiresAt: getExpiryDate(),
+        })),
+        skipDuplicates: true,
+      });
+
+      console.log(`  ✓ ${component.name}: ${component.batches.length} партий`);
+    }
+  }
+
+  // 2. ПОЛУЧАЕМ ВСЕ СОЗДАННЫЕ ПАРТИИ ДЛЯ ДАЛЬНЕЙШЕГО ИСПОЛЬЗОВАНИЯ
+  const allComponentBatches = await prisma.componentBatch.findMany({
+    include: {
+      component: true,
+    },
+  });
+
+  // Группируем партии по имени компонента
+  const batchesByComponentName = new Map<string, typeof allComponentBatches>();
+  allComponentBatches.forEach((batch) => {
+    const componentName = batch.component.name;
+    if (!batchesByComponentName.has(componentName)) {
+      batchesByComponentName.set(componentName, []);
+    }
+    batchesByComponentName.get(componentName)!.push(batch);
+  });
+
+  // 3. СОЗДАНИЕ ПРОИЗВОДСТВЕННЫХ ЗАКАЗОВ
+  console.log('\nСоздание производственных заказов...');
+
+  for (const order of recipes) {
+    // Создаем производственный заказ
+    const createdOrder = await prisma.productionOrder.create({
+      data: {
+        orderNumber: order.batch,
+        label: order.name,
+        plannedAt: order.expiresAt,
+        weight: new Prisma.Decimal(order.batchSize),
+      },
+    });
+
+    // Создаем компоненты рецепта
+    let position = 1;
+    for (const componentReq of order.components) {
+      // Получаем доступные партии для этого компонента
+      // const availableBatches =
+      //   batchesByComponentName.get(componentReq.name) || [];
+
+      // Выбираем случайные партии (от 1 до всех доступных)
+      // const numBatchesToUse = Math.min(
+      //   Math.floor(Math.random() * availableBatches.length) + 1,
+      //   availableBatches.length,
+      // );
+
+      // const selectedBatches = availableBatches
+      //   .sort(() => 0.5 - Math.random())
+      //   .slice(0, numBatchesToUse)
+      //   .map((b) => b.batchNumber);
+
+      // Создаем запись компонента в рецепте
+      await prisma.recipeComponent.create({
+        data: {
+          orderId: createdOrder.id,
+          componentName: componentReq.name,
+          position: position++,
+          requiredQty: new Prisma.Decimal(componentReq.weight),
+          unit: 'кг',
+          validBatches: [],
+        },
+      });
+    }
+
+    console.log(`  ✓ ${order.batch}: ${order.name} (${order.batchSize} кг)`);
+  }
+
+  // 4. ВАЛИДАЦИЯ
+  console.log('\n🔍 Проверка данных...');
+
+  // Проверка уникальности партий компонентов
+  const allBatches = await prisma.componentBatch.findMany({
+    select: { batchNumber: true },
+  });
+
+  const batchNumbers = allBatches.map((b) => b.batchNumber);
+  const uniqueBatches = new Set(batchNumbers);
+
+  if (batchNumbers.length !== uniqueBatches.size) {
+    console.warn('⚠ Обнаружены дубликаты партий компонентов!');
+  } else {
+    console.log('✓ Все партии компонентов уникальны');
+  }
+
+  // Проверка количества компонентов в рецептах
+  const recipesWithComponents = await prisma.productionOrder.findMany({
+    include: {
+      components: true,
+    },
+  });
+
+  for (const recipe of recipesWithComponents) {
+    console.log(
+      `  ${recipe.orderNumber}: ${recipe.components.length} компонентов`,
+    );
+  }
+
+  // Статистика
+  const componentCount = await prisma.component.count();
+  const batchCount = await prisma.componentBatch.count();
+  const orderCount = await prisma.productionOrder.count();
+  const recipeComponentCount = await prisma.recipeComponent.count();
+
+  console.log('\n📊 СТАТИСТИКА:');
+  console.log(`  Компонентов: ${componentCount}`);
+  console.log(`  Партий компонентов: ${batchCount}`);
+  console.log(`  Производственных заказов: ${orderCount}`);
+  console.log(`  Связей рецептов: ${recipeComponentCount}`);
+
+  // Распределение по количеству партий на компонент
+  const componentsWithBatches = await prisma.component.findMany({
+    include: {
+      batches: true,
+    },
+  });
+
+  const distribution = {
+    1: componentsWithBatches.filter((c) => c.batches.length === 1).length,
+    2: componentsWithBatches.filter((c) => c.batches.length === 2).length,
+    3: componentsWithBatches.filter((c) => c.batches.length === 3).length,
+    4: componentsWithBatches.filter((c) => c.batches.length === 4).length,
+  };
+
+  console.log('\n📈 Распределение партий:');
+  console.log(`  С 1 партией: ${distribution[1]} компонентов`);
+  console.log(`  С 2 партиями: ${distribution[2]} компонентов`);
+  console.log(`  С 3 партиями: ${distribution[3]} компонентов`);
+  console.log(`  С 4 партиями: ${distribution[4]} компонентов`);
+
+  console.log('\n✅ Seed завершен успешно!');
+}
+
+// Запуск seed
+seed()
+  .catch((error) => {
+    console.error('❌ Seed failed:', error);
+    process.exitCode = 1;
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });
