@@ -76,11 +76,11 @@ export class CreateQrCodeScanEventDto implements ICreateQrCodeScanEventDto {
 
   @ApiProperty()
   @IsString()
-  recipeComponentName: string;
+  componentName: string;
 
   @ApiProperty()
   @IsString()
-  recipeComponentId: string;
+  componentId: string;
 
   @ApiProperty()
   @IsString()

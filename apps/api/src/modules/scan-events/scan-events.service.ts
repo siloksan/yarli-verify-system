@@ -98,8 +98,8 @@ export class ScanEventsService {
       orderId,
       deviceId,
       operatorId,
-      recipeComponentId,
-      recipeComponentName,
+      componentId,
+      componentName,
       qrData,
     } = createScanEventDto;
 
@@ -117,12 +117,12 @@ export class ScanEventsService {
           throw new BadRequestException('Сканированный код не распознан');
         }
 
-        const scanResult = scannedData.name === recipeComponentName;
+        const scanResult = scannedData.name === componentName;
 
         const scanEventData = await tx.scanEvent.create({
           data: {
             orderId,
-            componentId: recipeComponentId,
+            componentId,
             bucketId: qrData.id,
             result: scanResult ? ScanResult.OK : ScanResult.WRONG,
             deviceId,

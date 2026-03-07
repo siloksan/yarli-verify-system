@@ -33,9 +33,25 @@ export default function OrderDetailsPage() {
               appUrl: 'scanner:///orders',
               webUrl: '/orders',
             })}
-            className="inline-flex text-sm font-semibold text-slate-500 transition hover:text-slate-700"
+            className="inline-flex items-center text-sm font-semibold text-slate-500 transition hover:text-slate-700"
           >
-            К заказам на производство
+            <span className="flex items-center justify-center w-8 h-8 mr-2 bg-indigo-100 group-hover:bg-indigo-200 rounded-full transition-colors">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M15 19l-7-7 7-7"
+                />
+              </svg>
+            </span>
+            <span className="font-medium">К заказам на производство</span>
           </Link>
 
           <div className="mt-3">

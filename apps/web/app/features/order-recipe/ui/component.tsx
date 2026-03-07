@@ -33,9 +33,9 @@ export function Component({
   return (
     <div
       key={componentId}
-      className={`rounded-2xl border bg-white p-4 shadow-sm transition-all `}
+      className={`rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md`}
     >
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between ">
         <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
             Компонент
