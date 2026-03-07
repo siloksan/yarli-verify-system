@@ -138,7 +138,7 @@ function getBucketData(state: FillingState, error: ErrorState) {
 function getComponentData(state: FillingState, _error: ErrorState) {
   if ('fillingAct' in state) {
     return {
-      componentBatch: state.fillingAct.componentBatchNumber,
+      componentBatch: state.fillingAct.componentBatch,
       componentName: state.fillingAct.componentName,
     };
   }

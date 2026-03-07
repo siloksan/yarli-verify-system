@@ -60,6 +60,7 @@ export class ScanEventsListener {
       workerName: scanEvent.operatorId,
     };
 
+    console.log('payload: ', payload);
     await this.notificationService.sendWrongScanEvent(payload);
   }
 }

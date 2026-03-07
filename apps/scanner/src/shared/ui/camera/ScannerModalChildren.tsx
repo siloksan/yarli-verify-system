@@ -54,12 +54,12 @@ export function BucketScannedSuccess({
 
 interface ComponentScannedSuccessProps {
   componentName: string;
-  scannedComponentBatch?: string;
+  componentBatch?: string;
 }
 
 export function ComponentScannedSuccess({
   componentName,
-  scannedComponentBatch,
+  componentBatch,
 }: ComponentScannedSuccessProps) {
   return (
     <View style={styles.modalContent}>
@@ -75,7 +75,7 @@ export function ComponentScannedSuccess({
             Сканирован компонент: {componentName}
           </Text>
           <Text style={styles.resultValue}>
-            Сканированная партия: {scannedComponentBatch && 'не указана'}
+            Сканированная партия: {componentBatch ?? 'не указана'}
           </Text>
         </View>
       </View>

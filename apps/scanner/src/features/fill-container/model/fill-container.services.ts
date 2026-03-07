@@ -21,7 +21,7 @@ export async function validateComponentForFillContainer(
       errorMessage:
         error instanceof HttpError
           ? error.message
-          : 'Компонент не может подходит для заполнения данной ёмкости. Попробуйте ещё раз.',
+          : 'Компонент не подходит для заполнения данной ёмкости. Попробуйте ещё раз.',
     };
   }
 }

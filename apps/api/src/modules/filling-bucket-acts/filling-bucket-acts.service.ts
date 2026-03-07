@@ -179,6 +179,7 @@ export class FillingBucketActsService {
         },
       },
     });
+    console.log('scannedBatch: ', scannedBatch);
 
     if (!scannedBatch) {
       throw new NotFoundException('Компонент не найден в системе');
@@ -252,7 +253,7 @@ export class FillingBucketActsService {
         componentBatch: fillAct.batch.batchNumber,
         createAt: fillAct.createdAt,
         bucketId: fillAct.bucket.id,
-        orderId: fillAct.order.id,
+        orderId: fillAct?.order?.id ?? null,
       },
       {
         excludeExtraneousValues: true,

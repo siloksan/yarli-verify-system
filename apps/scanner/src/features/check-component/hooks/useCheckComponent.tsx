@@ -64,6 +64,7 @@ export function useCheckComponent() {
       orderId,
     };
     const resultValidation = await validateComponent(data, dto, validBatches);
+    console.log('resultValidation: ', resultValidation);
 
     if ('errorMessage' in resultValidation) {
       const { errorMessage } = resultValidation;
@@ -85,7 +86,7 @@ export function useCheckComponent() {
       showModal(
         <ComponentScannedSuccess
           componentName={resultValidation.scannedComponentName}
-          scannedComponentBatch={resultValidation.scannedComponentBatch}
+          componentBatch={resultValidation.scannedComponentBatch}
         />,
       );
     }

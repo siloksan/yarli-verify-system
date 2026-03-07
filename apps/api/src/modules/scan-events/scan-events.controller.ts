@@ -19,6 +19,7 @@ export class ScanEventsController {
 
   @Post(API_ROUTES.SCAN_EVENTS.qrCode)
   createQrCodeScanEvent(@Body() createScanEventDto: CreateQrCodeScanEventDto) {
+    console.log('createScanEventDto: ', createScanEventDto);
     return this.scanEventsService.createQrCodeScanEvent(createScanEventDto);
   }
 }

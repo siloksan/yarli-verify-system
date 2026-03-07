@@ -5,6 +5,7 @@ import { ru } from 'date-fns/locale';
 import { Link } from 'react-router';
 import { useAllBuckets, useCreateBucket } from '~/features/bucket';
 import { useAllComponents } from '~/features/components';
+import { usePlatform } from '~/shared/hooks/usePlatform';
 
 const FORM_ELEMENTS_NAME = {
   component: 'component',
@@ -27,6 +28,7 @@ export default function BucketsPage() {
     null,
   );
   const [showQRModal, setShowQRModal] = useState(false);
+  const { getUrl } = usePlatform();
 
   const {
     data: buckets = [],
@@ -268,10 +270,29 @@ export default function BucketsPage() {
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 sm:gap-5">
         <header className="rounded-3xl border border-slate-200/60 bg-white/80 p-4 shadow-sm backdrop-blur sm:p-5">
           <Link
-            to="/"
-            className="inline-flex text-sm font-semibold text-slate-500 transition hover:text-slate-700"
+            to={getUrl({
+              appUrl: 'scanner:///',
+              webUrl: '/',
+            })}
+            className="inline-flex items-center text-sm font-semibold text-slate-500 transition hover:text-slate-700"
           >
-            В главное меню
+            <span className="flex items-center justify-center w-8 h-8 mr-2 bg-indigo-100 group-hover:bg-indigo-200 rounded-full transition-colors">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M15 19l-7-7 7-7"
+                />
+              </svg>
+            </span>
+            <span className="font-medium">В главное меню</span>
           </Link>
           <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
             <div>
@@ -318,13 +339,17 @@ export default function BucketsPage() {
 
                     const exactComponent = components.find(
                       (component) =>
-                        component.name.toLowerCase() === value.trim().toLowerCase(),
+                        component.name.toLowerCase() ===
+                        value.trim().toLowerCase(),
                     );
                     setSelectedComponentId(exactComponent?.id ?? '');
                   }}
                   onFocus={() => setIsComponentDropdownOpen(true)}
                   onBlur={() => {
-                    window.setTimeout(() => setIsComponentDropdownOpen(false), 120);
+                    window.setTimeout(
+                      () => setIsComponentDropdownOpen(false),
+                      120,
+                    );
                   }}
                   placeholder="Type to search component"
                   disabled={componentsLoading}

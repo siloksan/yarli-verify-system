@@ -17,7 +17,7 @@ export default function ComponentsPage() {
   const [search, setSearch] = useState('');
   const [searchInput, setSearchInput] = useState('');
   const [barcodeState, setBarcodeState] = useState<BarcodeState | null>(null);
-  const { getUrl, isApp } = usePlatform();
+  const { getUrl } = usePlatform();
 
   const {
     data: components,
@@ -122,9 +122,25 @@ export default function ComponentsPage() {
               appUrl: 'scanner:///',
               webUrl: '/',
             })}
-            className="inline-flex text-sm font-semibold text-slate-500 transition hover:text-slate-700"
+            className="inline-flex items-center text-sm font-semibold text-slate-500 transition hover:text-slate-700"
           >
-            В главное меню
+            <span className="flex items-center justify-center w-8 h-8 mr-2 bg-indigo-100 group-hover:bg-indigo-200 rounded-full transition-colors">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M15 19l-7-7 7-7"
+                />
+              </svg>
+            </span>
+            <span className="font-medium">В главное меню</span>
           </Link>
           <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
             <div>
@@ -202,7 +218,7 @@ export default function ComponentsPage() {
                     <p className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">
                       Компонент
                     </p>
-                    <h2 className="mt-1 truncate text-xl font-semibold text-slate-900">
+                    <h2 className="mt-1 truncate font-semibold text-slate-900">
                       {component.name}
                     </h2>
                   </div>

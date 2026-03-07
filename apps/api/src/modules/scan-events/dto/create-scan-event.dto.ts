@@ -7,7 +7,13 @@ import {
   BucketQRData,
 } from '@repo/api';
 import { Expose, Type } from 'class-transformer';
-import { IsArray, IsString, IsEnum, IsOptional } from 'class-validator';
+import {
+  IsArray,
+  IsString,
+  IsEnum,
+  IsOptional,
+  ValidateNested,
+} from 'class-validator';
 
 export class CreateBarcodeScanEventDto implements ICreateBarcodeScanEventDto {
   @ApiProperty()
@@ -67,6 +73,7 @@ class BucketQRDataDto implements BucketQRData {
 
 export class CreateQrCodeScanEventDto implements ICreateQrCodeScanEventDto {
   @ApiProperty({ type: BucketQRDataDto })
+  @ValidateNested()
   @Type(() => BucketQRDataDto)
   qrData: BucketQRDataDto;
 

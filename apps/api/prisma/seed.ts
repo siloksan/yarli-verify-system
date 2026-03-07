@@ -2,27 +2,12 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { Prisma, PrismaClient } from '../generated/prisma/client';
 import { Pool } from 'pg';
 import 'dotenv/config';
+import { recipes, componentsCatalog } from './seed.data';
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
-// Импорт данных из вашего файла
-import { recipes, componentsCatalog } from './orders-recipe';
-
-// Типы для производственных заказов
-type ProductionOrderSeed = {
-  orderNumber: string;
-  label: string;
-  description?: string;
-  plannedAt: Date;
-  batchSize: number;
-  recipeName: string;
-};
-
-// Конвертация рецептов в производственные заказы
-
-// Функция для генерации EAN-13 штрихкода
 function calculateEAN13Checksum(codeWithoutChecksum: string): string {
   const digits = codeWithoutChecksum.split('').map(Number);
   const sum = digits.reduce((acc, digit, index) => {
@@ -41,26 +26,15 @@ function getBarCodeEAN13ForComponent(batchNumber: string): string {
   return codeWithoutChecksum + checksum;
 }
 
-// Получение даты истечения срока (6 месяцев от текущей даты)
 function getExpiryDate(baseDate: Date = new Date()): Date {
   const expiryDate = new Date(baseDate);
   expiryDate.setMonth(expiryDate.getMonth() + 6);
   return expiryDate;
 }
 
-// Функция для сбора всех рецептов в плоский массив
-// function getAllRecipes() {
-//   return [
-//     ...Object.values(recipes.polyester),
-//     ...Object.values(recipes.acrylic),
-//     ...Object.values(recipes.waterDispersion),
-//   ];
-// }
-
 async function seed() {
   console.log('🌱 Начало seed...');
 
-  // Очистка базы данных
   console.log('Очистка таблиц...');
   await prisma.scanEvent.deleteMany();
   await prisma.componentBatch.deleteMany();
@@ -68,11 +42,9 @@ async function seed() {
   await prisma.productionOrder.deleteMany();
   await prisma.component.deleteMany();
 
-  // 1. СОЗДАНИЕ КОМПОНЕНТОВ И ИХ ПАРТИЙ
   console.log('Создание компонентов и партий...');
 
   for (const component of componentsCatalog) {
-    // Создаем компонент
     const created = await prisma.component.create({
       data: {
         name: component.name,
@@ -80,7 +52,6 @@ async function seed() {
       select: { id: true },
     });
 
-    // Создаем партии для компонента (1-4 партии)
     if (component.batches.length > 0) {
       await prisma.componentBatch.createMany({
         data: component.batches.map((batchNumber) => ({
@@ -96,14 +67,12 @@ async function seed() {
     }
   }
 
-  // 2. ПОЛУЧАЕМ ВСЕ СОЗДАННЫЕ ПАРТИИ ДЛЯ ДАЛЬНЕЙШЕГО ИСПОЛЬЗОВАНИЯ
   const allComponentBatches = await prisma.componentBatch.findMany({
     include: {
       component: true,
     },
   });
 
-  // Группируем партии по имени компонента
   const batchesByComponentName = new Map<string, typeof allComponentBatches>();
   allComponentBatches.forEach((batch) => {
     const componentName = batch.component.name;
@@ -112,12 +81,9 @@ async function seed() {
     }
     batchesByComponentName.get(componentName)!.push(batch);
   });
-
-  // 3. СОЗДАНИЕ ПРОИЗВОДСТВЕННЫХ ЗАКАЗОВ
   console.log('\nСоздание производственных заказов...');
 
   for (const order of recipes) {
-    // Создаем производственный заказ
     const createdOrder = await prisma.productionOrder.create({
       data: {
         orderNumber: order.batch,
@@ -127,25 +93,8 @@ async function seed() {
       },
     });
 
-    // Создаем компоненты рецепта
     let position = 1;
     for (const componentReq of order.components) {
-      // Получаем доступные партии для этого компонента
-      // const availableBatches =
-      //   batchesByComponentName.get(componentReq.name) || [];
-
-      // Выбираем случайные партии (от 1 до всех доступных)
-      // const numBatchesToUse = Math.min(
-      //   Math.floor(Math.random() * availableBatches.length) + 1,
-      //   availableBatches.length,
-      // );
-
-      // const selectedBatches = availableBatches
-      //   .sort(() => 0.5 - Math.random())
-      //   .slice(0, numBatchesToUse)
-      //   .map((b) => b.batchNumber);
-
-      // Создаем запись компонента в рецепте
       await prisma.recipeComponent.create({
         data: {
           orderId: createdOrder.id,
@@ -161,10 +110,8 @@ async function seed() {
     console.log(`  ✓ ${order.batch}: ${order.name} (${order.batchSize} кг)`);
   }
 
-  // 4. ВАЛИДАЦИЯ
   console.log('\n🔍 Проверка данных...');
 
-  // Проверка уникальности партий компонентов
   const allBatches = await prisma.componentBatch.findMany({
     select: { batchNumber: true },
   });
@@ -178,7 +125,6 @@ async function seed() {
     console.log('✓ Все партии компонентов уникальны');
   }
 
-  // Проверка количества компонентов в рецептах
   const recipesWithComponents = await prisma.productionOrder.findMany({
     include: {
       components: true,
@@ -191,7 +137,6 @@ async function seed() {
     );
   }
 
-  // Статистика
   const componentCount = await prisma.component.count();
   const batchCount = await prisma.componentBatch.count();
   const orderCount = await prisma.productionOrder.count();
@@ -203,7 +148,6 @@ async function seed() {
   console.log(`  Производственных заказов: ${orderCount}`);
   console.log(`  Связей рецептов: ${recipeComponentCount}`);
 
-  // Распределение по количеству партий на компонент
   const componentsWithBatches = await prisma.component.findMany({
     include: {
       batches: true,
@@ -226,7 +170,6 @@ async function seed() {
   console.log('\n✅ Seed завершен успешно!');
 }
 
-// Запуск seed
 seed()
   .catch((error) => {
     console.error('❌ Seed failed:', error);

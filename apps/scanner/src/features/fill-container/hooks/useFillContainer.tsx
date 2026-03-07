@@ -108,6 +108,7 @@ export function useFillContainer() {
       const {
         bucketData: { id: bucketId },
       } = state;
+      console.log('state: ', state);
 
       setCurrentState({
         step: 'COMPONENT_VALIDATING',
@@ -126,6 +127,7 @@ export function useFillContainer() {
         bucketId,
         createFillContainerActDto,
       );
+      console.log('resultComponentValidation: ', resultComponentValidation);
 
       if ('errorMessage' in resultComponentValidation) {
         const { errorMessage } = resultComponentValidation;
@@ -152,9 +154,10 @@ export function useFillContainer() {
         showModal(
           <ComponentScannedSuccess
             componentName={resultComponentValidation.componentName}
-            scannedComponentBatch={resultComponentValidation.componentBatch}
+            componentBatch={resultComponentValidation?.componentBatch}
           />,
         );
+
         return;
       }
     }

@@ -1,12 +1,15 @@
 import { useMemo, useState } from 'react';
 import { format } from 'date-fns';
 import { useAllFillingBucketActs } from '~/features/filling-bucket-acts';
+import { Link } from 'react-router';
+import { usePlatform } from '~/shared/hooks/usePlatform';
 
 export default function FillingBucketActsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchField, setSearchField] = useState<
     'везде' | 'по компоненту' | 'по сотруднику' | 'по партии'
   >('везде');
+  const { getUrl } = usePlatform();
 
   const {
     data: fillingActs = [],
@@ -42,7 +45,32 @@ export default function FillingBucketActsPage() {
   return (
     <div className="min-h-screen bg-gray-50 p-4 safe-padding">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
-        <header className="flex items-center justify-between">
+        <header className="rounded-3xl border border-slate-200/60 bg-white/80 p-4 shadow-sm backdrop-blur sm:p-5">
+          <Link
+            to={getUrl({
+              appUrl: 'scanner:///',
+              webUrl: '/',
+            })}
+            className="inline-flex items-center text-sm font-semibold text-slate-500 transition hover:text-slate-700"
+          >
+            <span className="flex items-center justify-center w-8 h-8 mr-2 bg-indigo-100 group-hover:bg-indigo-200 rounded-full transition-colors">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M15 19l-7-7 7-7"
+                />
+              </svg>
+            </span>
+            <span className="font-medium">В главное меню</span>
+          </Link>
           <div>
             <h1 className="text-2xl font-semibold text-gray-900">
               Акты заполнения емкостей

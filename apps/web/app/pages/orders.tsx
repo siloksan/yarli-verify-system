@@ -53,6 +53,31 @@ export default function OrdersPage() {
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,#dbeafe_0%,#f8fafc_45%,#f1f5f9_100%)] p-4 safe-padding">
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-5">
         <header className="rounded-3xl border border-slate-200/60 bg-white/80 p-5 shadow-sm backdrop-blur">
+          <Link
+            to={getUrl({
+              appUrl: 'scanner:///',
+              webUrl: '/',
+            })}
+            className="inline-flex items-center text-sm font-semibold text-slate-500 transition hover:text-slate-700"
+          >
+            <span className="flex items-center justify-center w-8 h-8 mr-2 bg-indigo-100 group-hover:bg-indigo-200 rounded-full transition-colors">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M15 19l-7-7 7-7"
+                />
+              </svg>
+            </span>
+            <span className="font-medium">В главное меню</span>
+          </Link>
           <div>
             <h1 className="text-2xl font-semibold text-slate-900">
               Заказы на производство
@@ -122,7 +147,7 @@ export default function OrdersPage() {
                   <p className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">
                     Партия {order.orderNumber}
                   </p>
-                  <p className="mt-1 truncate text-xl font-semibold text-slate-900 transition group-hover:text-blue-700">
+                  <p className="mt-1  text-xl font-semibold text-slate-900 transition group-hover:text-blue-700">
                     {order.label}
                   </p>
                 </div>

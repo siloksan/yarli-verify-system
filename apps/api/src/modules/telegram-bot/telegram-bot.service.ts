@@ -35,19 +35,24 @@ export class TelegramBotService implements OnModuleInit, NotificationService {
     this.logger.log('Уведомления Telegram включены');
   }
 
-  private escapeTelegramMarkdownV2(payload: ScanEventWithOrderNotification) {
-    for (const key of Object.keys(payload)) {
-      if (typeof payload[key] === 'string') {
-        payload[key] = payload[key].replaceAll(
-          /([_*\[\]()~`>#+\-=|{}.!\\])/g,
-          String.raw`\$1`,
-        );
-      } else {
-        payload[key] = String.raw`\-`;
-      }
-    }
+  private escapeTelegramMarkdownV2(value: string) {
+    return value.replaceAll(
+      /([_*\[\]()~`>#+\-=|{}.!\\])/g,
+      String.raw`\$1`,
+    );
+  }
 
-    return payload;
+  private formatToRuUtcPlus3(date: Date) {
+    return new Intl.DateTimeFormat('ru-RU', {
+      timeZone: 'Europe/Moscow',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    }).format(date);
   }
 
   private formatNetworkError(error: unknown) {
@@ -85,6 +90,7 @@ export class TelegramBotService implements OnModuleInit, NotificationService {
     }
 
     const message = this.buildWrongScanMessage(payload);
+    console.log('payload: ', payload);
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 10000);
@@ -123,16 +129,23 @@ export class TelegramBotService implements OnModuleInit, NotificationService {
   }
 
   private buildWrongScanMessage(payload: ScanEventWithOrderNotification) {
-    const {
-      createdAt,
-      orderBatch,
-      orderName,
-      recipeComponentName,
-      scannedComponentBatch,
-      scannedComponentName,
-      workerName,
-    } = this.escapeTelegramMarkdownV2(payload);
-    console.log('createdAt: ', createdAt);
+    const createdAt = this.escapeTelegramMarkdownV2(
+      payload.createdAt instanceof Date
+        ? this.formatToRuUtcPlus3(payload.createdAt)
+        : String.raw`\-`,
+    );
+    const orderBatch = this.escapeTelegramMarkdownV2(payload.orderBatch);
+    const orderName = this.escapeTelegramMarkdownV2(payload.orderName);
+    const recipeComponentName = this.escapeTelegramMarkdownV2(
+      payload.recipeComponentName,
+    );
+    const scannedComponentBatch = payload.scannedComponentBatch
+      ? this.escapeTelegramMarkdownV2(payload.scannedComponentBatch)
+      : String.raw`\-`;
+    const scannedComponentName = this.escapeTelegramMarkdownV2(
+      payload.scannedComponentName,
+    );
+    const workerName = this.escapeTelegramMarkdownV2(payload.workerName);
 
     const lines = [
       '🚨 *ОШИБКА СКАНИРОВАНИЯ* 🚨',
