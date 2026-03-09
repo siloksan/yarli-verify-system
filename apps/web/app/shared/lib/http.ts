@@ -1,13 +1,36 @@
 const getApiBaseUrl = (): string => {
-  if (import.meta.env.VITE_API_BASE_URL) {
-    return import.meta.env.VITE_API_BASE_URL;
+  const envBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim();
+
+  if (envBaseUrl && typeof window !== 'undefined') {
+    try {
+      const parsedEnvUrl = new URL(envBaseUrl);
+      const isEnvLocalhost =
+        parsedEnvUrl.hostname === 'localhost' ||
+        parsedEnvUrl.hostname === '127.0.0.1';
+      const isBrowserLocalhost =
+        window.location.hostname === 'localhost' ||
+        window.location.hostname === '127.0.0.1';
+
+      if (isEnvLocalhost && !isBrowserLocalhost) {
+        return `${window.location.protocol}//${window.location.hostname}:3000`;
+      }
+    } catch {
+      // Keep invalid env value behavior unchanged; return it below.
+    }
   }
 
-  return 'http://82.202.137.69:3000';
+  if (envBaseUrl) {
+    return envBaseUrl;
+  }
+
+  if (typeof window !== 'undefined') {
+    return `${window.location.protocol}//${window.location.hostname}:3000`;
+  }
+
+  return 'http://localhost:3000';
 };
 
 const API_BASE_URL = getApiBaseUrl();
-// const API_BASE_URL = 'http://185.10.128.182:3000';
 
 export const HTTP_METHODS = {
   GET: 'GET',

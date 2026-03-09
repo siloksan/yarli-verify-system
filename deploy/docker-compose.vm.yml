@@ -41,7 +41,6 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000
-      VITE_API_BASE_URL: http://82.202.137.69:3000
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O /dev/null http://0.0.0.0:3000 || exit 1"]
       interval: 30s
