@@ -1,3 +1,5 @@
+name: Deploy on local machine
+
 services:
   postgres:
     image: postgres:16
@@ -6,11 +8,27 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-yarli}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-yarli}
       POSTGRES_DB: ${POSTGRES_DB:-yarli_verify}
+    ports:
+      - "5432:5432"
     volumes:
       - yarli_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-yarli} -d ${POSTGRES_DB:-yarli_verify}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   api:
-    image: ${API_IMAGE:-your-dockerhub-username/yarli-api}:${IMAGE_TAG:-latest}
+    image: yarli-api:local
+    build:
+      context: ..
+      dockerfile: apps/api/Dockerfile
+    pull_policy: never
     restart: always
     depends_on:
       - postgres
@@ -26,26 +44,40 @@ services:
       TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
     ports:
       - "3000:3000"
+    healthcheck:
+      test:
+        ["CMD-SHELL", "wget -q -O /dev/null http://localhost:3000 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
 
   web:
-    image: ${WEB_IMAGE:-your-dockerhub-username/yarli-web}:${IMAGE_TAG:-latest}
+    image: yarli-web:local
+    build:
+      context: ..
+      dockerfile: apps/web/Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:3000}
+    pull_policy: never
     restart: always
     depends_on:
       - api
     environment:
       NODE_ENV: production
       PORT: 3000
+    ports:
+      - "80:3000"
     healthcheck:
-      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:3000 || exit 1"]
+      test:
+        ["CMD-SHELL", "wget -q -O /dev/null http://localhost:3000 || exit 1"]
       interval: 30s
       timeout: 5s
       retries: 5
       start_period: 20s
-    ports:
-      - "80:3000"
 
   api-migrate:
-    image: ${API_IMAGE:-your-dockerhub-username/yarli-api}:${IMAGE_TAG:-latest}
+    image: yarli-api:local
     profiles: ["tools"]
     depends_on:
       - postgres
@@ -55,7 +87,7 @@ services:
     restart: "no"
 
   api-seed:
-    image: ${API_IMAGE:-your-dockerhub-username/yarli-api}:${IMAGE_TAG:-latest}
+    image: yarli-api:local
     profiles: ["tools"]
     depends_on:
       - postgres

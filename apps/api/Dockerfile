@@ -1,4 +1,4 @@
-FROM node:20-alpine AS build
+FROM node:22-alpine3.20 AS build
 
 WORKDIR /app
 
@@ -10,7 +10,7 @@ RUN yarn workspace api db:generate
 RUN yarn workspace @repo/api build
 RUN yarn workspace api build
 
-FROM node:20-alpine AS runtime
+FROM node:22-alpine3.20 AS runtime
 
 WORKDIR /app
 

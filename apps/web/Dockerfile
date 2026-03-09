@@ -1,4 +1,4 @@
-FROM node:20-alpine AS build
+FROM node:22-alpine3.20 AS build
 
 WORKDIR /app
 
@@ -12,7 +12,7 @@ RUN yarn install --immutable
 RUN yarn workspace @repo/api build
 RUN yarn workspace web build
 
-FROM node:20-alpine AS runtime
+FROM node:22-alpine3.20 AS runtime
 
 WORKDIR /app/apps/web
 
@@ -20,7 +20,8 @@ ENV NODE_ENV=production
 ENV PORT=3000
 
 COPY --from=build /app /app
+RUN npm install -g serve
 
 EXPOSE 3000
 
-CMD ["node", "/app/apps/web/node_modules/@react-router/serve/bin.js", "./build/server/index.js"]
+CMD ["serve", "-s", "/app/apps/web/build/client", "-l", "3000"]
