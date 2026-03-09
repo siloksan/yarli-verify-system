@@ -166,12 +166,22 @@ Deploy on VM:
 
 ```bash
 docker compose -f deploy/docker-compose.vm.yml pull
-docker compose -f deploy/docker-compose.vm.yml up -d
+docker compose -f deploy/docker-compose.vm.yml up -d postgres
+docker compose -f deploy/docker-compose.vm.yml --profile tools run --rm api-migrate
+docker compose -f deploy/docker-compose.vm.yml up -d api web
 ```
 
 Update deployment:
 
 ```bash
 docker compose -f deploy/docker-compose.vm.yml pull
-docker compose -f deploy/docker-compose.vm.yml up -d
+docker compose -f deploy/docker-compose.vm.yml up -d postgres
+docker compose -f deploy/docker-compose.vm.yml --profile tools run --rm api-migrate
+docker compose -f deploy/docker-compose.vm.yml up -d api web
+```
+
+Optional seed (this clears and repopulates demo data):
+
+```bash
+docker compose -f deploy/docker-compose.vm.yml --profile tools run --rm api-seed
 ```

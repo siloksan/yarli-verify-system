@@ -6,6 +6,7 @@ COPY . .
 
 RUN corepack enable
 RUN yarn install --immutable
+RUN yarn workspace api db:generate
 RUN yarn workspace @repo/api build
 RUN yarn workspace api build
 
