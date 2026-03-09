@@ -3,14 +3,11 @@ const getApiBaseUrl = (): string => {
     return import.meta.env.VITE_API_BASE_URL;
   }
 
-  if (typeof window !== 'undefined') {
-    return `${window.location.protocol}//${window.location.hostname}:3000`;
-  }
-
   return 'http://82.202.137.69:3000';
 };
 
 const API_BASE_URL = getApiBaseUrl();
+// const API_BASE_URL = 'http://185.10.128.182:3000';
 
 export const HTTP_METHODS = {
   GET: 'GET',
