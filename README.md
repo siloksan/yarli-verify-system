@@ -122,3 +122,56 @@ Learn more about the power of Turborepo:
 - [Filtering](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters)
 - [Configuration Options](https://turborepo.dev/docs/reference/configuration)
 - [CLI Usage](https://turborepo.dev/docs/reference/command-line-reference)
+
+## VM Deployment (Images From Registry)
+
+This repository now supports a pull-only VM deployment model:
+
+1. CI builds and pushes Docker images to Docker Hub:
+   - `<dockerhub-username>/yarli-api:latest`
+   - `<dockerhub-username>/yarli-web:latest`
+2. VM only pulls and runs images via Docker Compose.
+
+### CI Image Build/Push
+
+Workflow file: `.github/workflows/docker-images.yml`
+
+- Triggered on push to `main` (and manually via `workflow_dispatch`).
+- Uses `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` GitHub secrets to push images.
+- Optional repo variable: `WEB_VITE_API_BASE_URL` (default is `http://82.202.137.69:3000`).
+
+### VM Setup
+
+Copy `deploy/docker-compose.vm.yml` and create a `.env` near it:
+
+```env
+API_IMAGE=<dockerhub-username>/yarli-api
+WEB_IMAGE=<dockerhub-username>/yarli-web
+IMAGE_TAG=latest
+
+POSTGRES_USER=yarli
+POSTGRES_PASSWORD=change_me
+POSTGRES_DB=yarli_verify
+
+API_DOC_PATH=api/docs
+API_DOC_VERSION=1.0.0
+OPEN_API_VERSION=3.0.0
+
+TELEGRAM_ENABLED=false
+TELEGRAM_BOT_TOKEN=
+TELEGRAM_CHAT_ID=
+```
+
+Deploy on VM:
+
+```bash
+docker compose -f deploy/docker-compose.vm.yml pull
+docker compose -f deploy/docker-compose.vm.yml up -d
+```
+
+Update deployment:
+
+```bash
+docker compose -f deploy/docker-compose.vm.yml pull
+docker compose -f deploy/docker-compose.vm.yml up -d
+```
