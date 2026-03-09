@@ -38,5 +38,15 @@ services:
     ports:
       - "80:3000"
 
+  api-seed:
+    image: ${API_IMAGE:-your-dockerhub-username/yarli-api}:${IMAGE_TAG:-latest}
+    profiles: ["tools"]
+    depends_on:
+      - postgres
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-yarli}:${POSTGRES_PASSWORD:-yarli}@postgres:5432/${POSTGRES_DB:-yarli_verify}
+    command: ["yarn", "workspace", "api", "db:seed"]
+    restart: "no"
+
 volumes:
   yarli_pgdata:
