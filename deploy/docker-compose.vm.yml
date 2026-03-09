@@ -53,6 +53,7 @@ services:
     profiles: ["tools"]
     depends_on:
       - postgres
+      - api-migrate
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-yarli}:${POSTGRES_PASSWORD:-yarli}@postgres:5432/${POSTGRES_DB:-yarli_verify}
     command: ["yarn", "workspace", "api", "db:seed"]
