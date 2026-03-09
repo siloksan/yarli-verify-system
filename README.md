@@ -259,7 +259,7 @@ git checkout origin/deploy -- deploy/docker-compose.vm.yml
 Or download directly:
 
 ```bash
-curl -L "https://raw.githubusercontent.com/<owner>/<repo>/deploy/deploy/docker-compose.vm.yml" -o deploy/docker-compose.vm.yml
+curl -L "https://raw.githubusercontent.com/siloksan/yarli-verify-system/deploy/deploy/docker-compose.vm.yml" -o deploy/docker-compose.vm.yml
 ```
 
 ### Step 2. Create VM env file

@@ -7,7 +7,7 @@ const getApiBaseUrl = (): string => {
     return `${window.location.protocol}//${window.location.hostname}:3000`;
   }
 
-  return 'http://localhost:3000';
+  return 'http://82.202.137.69:3000';
 };
 
 const API_BASE_URL = getApiBaseUrl();
