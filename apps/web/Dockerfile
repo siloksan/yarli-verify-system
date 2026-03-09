@@ -17,11 +17,10 @@ FROM node:20-alpine AS runtime
 WORKDIR /app/apps/web
 
 ENV NODE_ENV=production
-ENV PATH=/app/node_modules/.bin:$PATH
 ENV PORT=3000
 
 COPY --from=build /app /app
 
 EXPOSE 3000
 
-CMD ["react-router-serve", "./build/server/index.js"]
+CMD ["node", "/app/apps/web/node_modules/@react-router/serve/bin.js", "./build/server/index.js"]
