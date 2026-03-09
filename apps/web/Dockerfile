@@ -1,22 +1,27 @@
-FROM node:20-alpine AS development-dependencies-env
-COPY . /app
-WORKDIR /app
-RUN npm ci
+FROM node:20-alpine AS build
 
-FROM node:20-alpine AS production-dependencies-env
-COPY ./package.json package-lock.json /app/
 WORKDIR /app
-RUN npm ci --omit=dev
 
-FROM node:20-alpine AS build-env
-COPY . /app/
-COPY --from=development-dependencies-env /app/node_modules /app/node_modules
-WORKDIR /app
-RUN npm run build
+ARG VITE_API_BASE_URL=http://localhost:3000
+ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
 
-FROM node:20-alpine
-COPY ./package.json package-lock.json /app/
-COPY --from=production-dependencies-env /app/node_modules /app/node_modules
-COPY --from=build-env /app/build /app/build
-WORKDIR /app
-CMD ["npm", "run", "start"]
+COPY . .
+
+RUN corepack enable
+RUN yarn install --immutable
+RUN yarn workspace @repo/api build
+RUN yarn workspace web build
+
+FROM node:20-alpine AS runtime
+
+WORKDIR /app/apps/web
+
+ENV NODE_ENV=production
+ENV PATH=/app/node_modules/.bin:$PATH
+ENV PORT=3000
+
+COPY --from=build /app /app
+
+EXPOSE 3000
+
+CMD ["react-router-serve", "./build/server/index.js"]

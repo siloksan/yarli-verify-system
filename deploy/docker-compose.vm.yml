@@ -1,0 +1,42 @@
+services:
+  postgres:
+    image: postgres:16
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-yarli}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-yarli}
+      POSTGRES_DB: ${POSTGRES_DB:-yarli_verify}
+    volumes:
+      - yarli_pgdata:/var/lib/postgresql/data
+
+  api:
+    image: ${API_IMAGE:-your-dockerhub-username/yarli-api}:${IMAGE_TAG:-latest}
+    restart: always
+    depends_on:
+      - postgres
+    environment:
+      NODE_ENV: production
+      APP_PORT: 3000
+      DATABASE_URL: postgres://${POSTGRES_USER:-yarli}:${POSTGRES_PASSWORD:-yarli}@postgres:5432/${POSTGRES_DB:-yarli_verify}
+      API_DOC_PATH: ${API_DOC_PATH:-api/docs}
+      API_DOC_VERSION: ${API_DOC_VERSION:-1.0.0}
+      OPEN_API_VERSION: ${OPEN_API_VERSION:-3.0.0}
+      TELEGRAM_ENABLED: ${TELEGRAM_ENABLED:-false}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
+    ports:
+      - "3000:3000"
+
+  web:
+    image: ${WEB_IMAGE:-your-dockerhub-username/yarli-web}:${IMAGE_TAG:-latest}
+    restart: always
+    depends_on:
+      - api
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+    ports:
+      - "80:3000"
+
+volumes:
+  yarli_pgdata:

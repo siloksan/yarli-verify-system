@@ -1,7 +1,16 @@
-// const BASE_API_URL = 'http://192.168.0.52:3000';
+const getApiBaseUrl = (): string => {
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL;
+  }
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-console.log(API_BASE_URL);
+  if (typeof window !== 'undefined') {
+    return `${window.location.protocol}//${window.location.hostname}:3000`;
+  }
+
+  return 'http://localhost:3000';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 export const HTTP_METHODS = {
   GET: 'GET',
@@ -25,7 +34,6 @@ export async function http<TResponse, TBody = unknown>(
   options?: RequestOptions<TBody>,
 ): Promise<TResponse> {
   const { method = HTTP_METHODS.GET, body, params, headers } = options ?? {};
-  console.log('options: ', options);
 
   let finalUrl = `${API_BASE_URL}${endpoint || ''}`;
 
