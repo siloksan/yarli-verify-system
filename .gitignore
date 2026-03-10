@@ -32,7 +32,9 @@ playwright-report/
 out/
 build
 dist
-
+!packages/api/dist
+# apps/api/dist
+# apps/web/dist
 # IDEs and editors
 /.idea
 .project

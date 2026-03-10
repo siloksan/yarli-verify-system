@@ -299,6 +299,11 @@ Variable description for VM:
 - `TELEGRAM_BOT_TOKEN`: Telegram bot token.
 - `TELEGRAM_CHAT_ID`: Telegram destination chat/channel ID.
 
+Important for VM web deploy:
+
+- `VITE_API_BASE_URL` is a Vite build-time variable (Docker `build-arg`), not a runtime container env for `docker-compose.vm.yml`.
+- To change browser API target in VM deploy, rebuild/push `yarli-web` with the correct `WEB_VITE_API_BASE_URL` (GitHub Actions variable), then `pull` and recreate the `web` container.
+
 ### Step 3. Pull images
 
 ```bash
@@ -358,10 +363,10 @@ If you cannot open pages from outside VM:
 2. Pull and restart:
 
 ```bash
-docker compose --env-file deploy/.env -f deploy/docker-compose.vm.yml pull
-docker compose --env-file deploy/.env -f deploy/docker-compose.vm.yml up -d postgres
-docker compose --env-file deploy/.env -f deploy/docker-compose.vm.yml --profile tools run --rm api-migrate
-docker compose --env-file deploy/.env -f deploy/docker-compose.vm.yml up -d api web
+docker compose --env-file .env -f deploy/docker-compose.vm.yml pull
+docker compose --env-file .env -f deploy/docker-compose.vm.yml up -d postgres
+docker compose --env-file .env -f deploy/docker-compose.vm.yml --profile tools run --rm api-migrate
+docker compose --env-file .env -f deploy/docker-compose.vm.yml up -d api web
 ```
 
 ### Stop services

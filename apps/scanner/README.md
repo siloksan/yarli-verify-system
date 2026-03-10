@@ -1,53 +1,159 @@
-# Welcome to your Expo app 👋
+# Scanner App
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Expo-based mobile scanner app in the Yarli Verify System monorepo.
 
-## Get started
+## Tech stack
 
-1. Install dependencies
+- Expo SDK 54
+- React Native 0.81
+- Expo Router
+- Android package id: `com.tutel.scanner`
 
-   ```bash
-   npm install
-   ```
+## 1. Install process
 
-2. Start the app
+### Prerequisites
 
-   ```bash
-   npx expo start
-   ```
+- Node.js `>=20.22`
+- Corepack enabled
+- Yarn `4.12.0`
+- Android Studio (for local Android development)
+- JDK 17 (usually included with Android Studio)
 
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+### Setup from monorepo root
 
 ```bash
-npm run reset-project
+cd c:\YVS
+corepack enable
+corepack prepare yarn@4.12.0 --activate
+yarn install --immutable
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+### Scanner environment variables
 
-## Learn more
+Create/update `apps/scanner/.env`:
 
-To learn more about developing your project with Expo, look at the following resources:
+```env
+EXPO_PUBLIC_API_BASE_URL=http://82.202.137.69:3000
+EXPO_PUBLIC_WEB_CLIENT_BASE_URL=http://82.202.137.69:80
+```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+`EXPO_PUBLIC_*` variables are embedded into the app at build time.
 
-## Join the community
+## 2. Development process (Android Studio)
 
-Join our community of developers creating universal apps.
+### One-time Android Studio setup
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+1. Install Android Studio.
+2. Install SDK components:
+   - Android SDK Platform (latest stable)
+   - Android SDK Build-Tools
+   - Android Emulator
+3. Create an emulator in Device Manager (for example Pixel + Android 14/15 image).
+4. Ensure `ANDROID_HOME` points to your SDK and `platform-tools` is in `PATH`.
 
-Important
-If you have build error remove node_modules and try to rebuild project
+### Run app on Android emulator/device
+
+From monorepo root:
+
+```bash
+cd c:\YVS
+yarn workspace scanner android
+```
+
+This command runs `expo run:android` and launches the app in a native Android build.
+
+### Useful dev commands
+
+```bash
+cd c:\YVS\apps\scanner
+npx expo start --dev-client
+```
+
+- Press `a` to open Android target from Expo CLI.
+- Use Metro logs for JS/runtime debugging.
+- For native debugging/profiling, open `apps/scanner/android` in Android Studio.
+
+## 3. Production build process
+
+Production artifacts are built with Expo official cloud tool: EAS Build.
+
+### EAS configuration
+
+`apps/scanner/eas.json` contains:
+
+- `preview` profile: Android `apk` (internal distribution, direct install on many devices)
+- `production` profile: Android `app-bundle` (`.aab`, for Google Play)
+- Build-time env values for `EXPO_PUBLIC_API_BASE_URL` and `EXPO_PUBLIC_WEB_CLIENT_BASE_URL`
+
+### Build APK (install directly on devices)
+
+```bash
+cd c:\YVS\apps\scanner
+npx eas login
+npx eas build -p android --profile preview
+```
+
+After build completes, download the generated `.apk` from the EAS build page.
+
+### Build AAB (Google Play)
+
+```bash
+cd c:\YVS\apps\scanner
+npx eas build -p android --profile production
+```
+
+After build completes, download the generated `.aab` from the EAS build page and upload it to Google Play Console.
+
+### Optional: submit to Google Play via EAS
+
+```bash
+npx eas submit -p android --profile production
+```
+
+## 4. Local build process
+
+Use this when you want to build on your machine instead of Expo cloud.
+
+### Required local environment
+
+- `JAVA_HOME` -> JDK 17 path (for example `C:\Program Files\Microsoft\jdk-17...`)
+- `ANDROID_HOME` -> Android SDK path (for example `C:\Users\<user>\AppData\Local\Android\Sdk`)
+- `PATH` should include:
+  - `%ANDROID_HOME%\platform-tools`
+  - `%ANDROID_HOME%\emulator`
+  - `%ANDROID_HOME%\cmdline-tools\latest\bin`
+
+### Local build with EAS (official Expo, local runner)
+
+```bash
+cd c:\YVS\apps\scanner
+npx eas build -p android --profile preview --local
+```
+
+Important:
+
+- `eas build --local` for Android requires macOS or Linux.
+- On Windows you will get: `Unsupported platform, macOS or Linux is required to build apps for Android`.
+- On Windows, use one of these instead:
+  - EAS cloud build: `npx eas build -p android --profile preview`
+  - Native local Gradle build (section below).
+
+### Local build with Gradle (native Android)
+
+```bash
+cd c:\YVS\apps\scanner\android
+.\gradlew.bat assembleRelease
+```
+
+APK output:
+
+`apps/scanner/android/app/build/outputs/apk/release/app-release.apk`
+
+## Troubleshooting
+
+- If dependency state is broken, run:
+  - `yarn install --immutable`
+- If native Android cache issues appear:
+  - delete `apps/scanner/android/.gradle` and rebuild
+- If app points to wrong backend:
+  - verify `.env` and `eas.json` values for `EXPO_PUBLIC_*` variables

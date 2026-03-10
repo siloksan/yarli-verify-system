@@ -1,0 +1,1 @@
+{"version":3,"file":"bucket.entity.d.ts","sourceRoot":"","sources":["../../src/entities/bucket.entity.ts"],"names":[],"mappings":"AAAA,MAAM,WAAW,YAAY;IAC3B,EAAE,EAAE,MAAM,CAAC;IACX,aAAa,EAAE,MAAM,CAAC;IACtB,WAAW,EAAE,MAAM,CAAC;IACpB,OAAO,EAAE,MAAM,CAAC;IAChB,QAAQ,CAAC,EAAE,MAAM,CAAC;CACnB"}

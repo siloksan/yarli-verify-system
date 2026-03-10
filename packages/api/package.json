@@ -9,7 +9,7 @@
     "build": "tsc -b -v",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\""
   },
-  "main": "./dist/entry.js",
+  "main": "src/index.ts",
   "types": "./dist/entry.d.ts",
   "files": [
     "./dist/**"
@@ -19,7 +19,14 @@
   },
   "exports": {
     ".": {
-      "import": "./dist/entry.js",
+      "import": [
+        "./dist/entry.js",
+        "./src/entry.ts"
+      ],
+      "types": [
+        "./dist/entry.d.ts",
+        "./src/entry.ts"
+      ],
       "require": "./dist/entry.js"
     },
     "./*": {

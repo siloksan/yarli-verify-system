@@ -1,0 +1,27 @@
+{
+  "cli": {
+    "version": ">= 16.0.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "preview": {
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_API_BASE_URL": "http://82.202.137.69:3000",
+        "EXPO_PUBLIC_WEB_CLIENT_BASE_URL": "http://82.202.137.69:80"
+      },
+      "android": {
+        "buildType": "apk"
+      }
+    },
+    "production": {
+      "env": {
+        "EXPO_PUBLIC_API_BASE_URL": "http://82.202.137.69:3000",
+        "EXPO_PUBLIC_WEB_CLIENT_BASE_URL": "http://82.202.137.69:80"
+      },
+      "android": {
+        "buildType": "app-bundle"
+      }
+    }
+  }
+}
