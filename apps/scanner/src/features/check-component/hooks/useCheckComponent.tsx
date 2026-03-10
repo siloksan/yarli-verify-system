@@ -115,6 +115,7 @@ export function useCheckComponent() {
   };
 
   return {
+    componentName: webRequest.payload.componentName,
     state,
     handleScan,
     isScannerModeAvailable,

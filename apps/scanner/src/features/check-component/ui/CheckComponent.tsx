@@ -31,6 +31,7 @@ export function CheckComponent() {
   if (!scan) return null;
 
   const {
+    componentName,
     state,
     handleScan,
     isScannerModeAvailable,
@@ -83,6 +84,10 @@ export function CheckComponent() {
         }
         onActionPress={onActionPress}
         infoRows={[
+          {
+            label: 'Сканируйте: ',
+            value: componentName,
+          },
           {
             label: 'Этап',
             value: STEPS_DICTIONARY[state.step],

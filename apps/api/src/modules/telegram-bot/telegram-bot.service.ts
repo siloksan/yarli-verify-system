@@ -36,10 +36,7 @@ export class TelegramBotService implements OnModuleInit, NotificationService {
   }
 
   private escapeTelegramMarkdownV2(value: string) {
-    return value.replaceAll(
-      /([_*\[\]()~`>#+\-=|{}.!\\])/g,
-      String.raw`\$1`,
-    );
+    return value.replaceAll(/([_*\[\]()~`>#+\-=|{}.!\\])/g, String.raw`\$1`);
   }
 
   private formatToRuUtcPlus3(date: Date) {
@@ -94,37 +91,43 @@ export class TelegramBotService implements OnModuleInit, NotificationService {
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 10000);
-    try {
-      const response = await fetch(
-        `https://api.telegram.org/bot${telegramConfig.botToken}/sendMessage`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
+    const retries = 6;
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        const response = await fetch(
+          `https://api.telegram.org/bot${telegramConfig.botToken}/sendMessage`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              chat_id: telegramConfig.chatId,
+              text: message,
+              parse_mode: 'MarkdownV2',
+            }),
+            signal: controller.signal,
           },
-          body: JSON.stringify({
-            chat_id: telegramConfig.chatId,
-            text: message,
-            parse_mode: 'MarkdownV2',
-            disable_web_page_preview: true,
-          }),
-          signal: controller.signal,
-        },
-      );
-
-      if (!response.ok) {
-        const payload = await response.text();
-        this.logger.error(
-          `Ошибка запроса к Telegram API: ${response.status} ${response.statusText}. Ответ: ${payload}`,
         );
+
+        if (!response.ok) {
+          throw new Error(`Telegram API error ${response.status}`);
+        }
+
+        return;
+      } catch (error) {
+        this.logger.warn(`Telegram send attempt ${attempt} failed`);
+
+        if (attempt === retries) {
+          this.logger.error('Telegram message delivery failed permanently');
+          throw error;
+        }
+        const errorMessage = this.formatNetworkError(error);
+        this.logger.error(
+          `Не удалось отправить уведомление в Telegram из-за сетевой ошибки или ошибки API: ${errorMessage}`,
+        );
+        await new Promise((r) => setTimeout(r, 1000 * attempt));
+      } finally {
+        clearTimeout(timeout);
       }
-    } catch (error) {
-      const errorMessage = this.formatNetworkError(error);
-      this.logger.error(
-        `Не удалось отправить уведомление в Telegram из-за сетевой ошибки или ошибки API: ${errorMessage}`,
-      );
-    } finally {
-      clearTimeout(timeout);
     }
   }
 
