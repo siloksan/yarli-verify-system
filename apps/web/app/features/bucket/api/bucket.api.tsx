@@ -1,4 +1,8 @@
-import { HTTP_METHODS, type IBucketCreateDto, type IBucketResponseDto, type IComponentDto } from '@repo/api';
+import {
+  HTTP_METHODS,
+  type IBucketCreateDto,
+  type IBucketResponseDto,
+} from '@repo/api';
 import { http } from '~/shared/lib/http';
 
 export function getAllBuckets(search?: string) {
@@ -12,5 +16,8 @@ export function getAllBuckets(search?: string) {
 }
 
 export function createBucket(createData: IBucketCreateDto) {
-  return http<IBucketResponseDto>('/buckets', {method: HTTP_METHODS.POST, body: createData})
+  return http<IBucketResponseDto>('/buckets', {
+    method: HTTP_METHODS.POST,
+    body: createData,
+  });
 }

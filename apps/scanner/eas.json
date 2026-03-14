@@ -1,27 +1,27 @@
 {
   "cli": {
-    "version": ">= 16.0.0",
+    "version": ">= 16.6.2",
     "appVersionSource": "remote"
   },
   "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal"
+    },
     "preview": {
-      "distribution": "internal",
-      "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "http://82.202.137.69:3000",
-        "EXPO_PUBLIC_WEB_CLIENT_BASE_URL": "http://82.202.137.69:80"
-      },
-      "android": {
-        "buildType": "apk"
-      }
+      "distribution": "internal"
     },
     "production": {
+      "corepack": true,
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "http://82.202.137.69:3000",
-        "EXPO_PUBLIC_WEB_CLIENT_BASE_URL": "http://82.202.137.69:80"
+        "YARN_ENABLE_IMMUTABLE_INSTALLS": "false"
       },
       "android": {
-        "buildType": "app-bundle"
+        "buildType": "apk" // ← APK вместо AAB
       }
     }
+  },
+  "submit": {
+    "production": {}
   }
 }

@@ -1,11 +1,9 @@
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Prisma, PrismaClient } from '../generated/prisma/client';
-import { Pool } from 'pg';
 import 'dotenv/config';
 import { recipes, componentsCatalog } from './seed.data';
 
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-const adapter = new PrismaPg(pool);
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
 function calculateEAN13Checksum(codeWithoutChecksum: string): string {

@@ -1,7 +1,6 @@
 {
   "name": "@repo/api",
   "version": "0.0.0",
-  "private": true,
   "license": "MIT",
   "type": "module",
   "scripts": {
@@ -9,7 +8,7 @@
     "build": "tsc -b -v",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\""
   },
-  "main": "src/index.ts",
+  "main": "./dist/entry.js",
   "types": "./dist/entry.d.ts",
   "files": [
     "./dist/**"
@@ -19,19 +18,15 @@
   },
   "exports": {
     ".": {
+      "react-native": "./dist/entry.js",
       "import": [
-        "./dist/entry.js",
-        "./src/entry.ts"
+        "./dist/entry.js"
       ],
+      "require": "./dist/entry.js",
       "types": [
-        "./dist/entry.d.ts",
-        "./src/entry.ts"
+        "./dist/entry.d.ts"
       ],
-      "require": "./dist/entry.js"
-    },
-    "./*": {
-      "import": "./dist/*.js",
-      "require": "./dist/*.js"
+      "default": "./dist/entry.js"
     }
   },
   "dependencies": {
